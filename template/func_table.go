@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"text/template"
 
 	"github.com/coveo/gotemplate/collections"
+	"github.com/coveo/gotemplate/text/template"
 	"github.com/fatih/color"
 )
 

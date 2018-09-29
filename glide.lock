@@ -1,5 +1,5 @@
 hash: 078d5ec26cabd74670acbed392807abfba66bd64b9a630197399567522be3e94
-updated: 2018-09-18T22:41:24.45873-04:00
+updated: 2018-09-25T06:56:58.032598-04:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -58,12 +58,12 @@ imports:
   - scrypt
   - ssh/terminal
 - name: golang.org/x/net
-  version: 26e67e76b6c3f6ce91f7c52def5af501b4e0f3a2
+  version: f04abc6bdfa7a0171a8a0c9fd2ada9391044d056
   subpackages:
   - html
   - html/atom
 - name: golang.org/x/sys
-  version: ee1b12c67af419cf5a9be3bdbeea7fc1c5f32f11
+  version: 90868a75fefd03942536221d7c0e2f84ec62a668
   subpackages:
   - unix
   - windows

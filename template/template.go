@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"text/template"
 
 	"github.com/coveo/gotemplate/collections"
+	"github.com/coveo/gotemplate/text/template"
 	"github.com/coveo/gotemplate/utils"
 	logging "github.com/op/go-logging"
 )
