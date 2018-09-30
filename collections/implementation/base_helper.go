@@ -153,7 +153,7 @@ func (bh BaseHelper) tryAsList(object interface{}, strict bool) (baseIList, erro
 			case reflect.Slice, reflect.Array:
 				value := reflect.ValueOf(object)
 				result = bh.CreateList(value.Len())
-				for i := 0; i < result.Len(); i++ {
+				for i := 0; i < result.Count(); i++ {
 					result.Set(i, value.Index(i).Interface())
 				}
 			default:
@@ -162,7 +162,7 @@ func (bh BaseHelper) tryAsList(object interface{}, strict bool) (baseIList, erro
 		}
 	}
 	if bh.NeedConversion(result, false) {
-		newList := bh.CreateList(result.Len())
+		newList := bh.CreateList(result.Count())
 		for i, val := range result.AsArray() {
 			newList.Set(i, val)
 		}

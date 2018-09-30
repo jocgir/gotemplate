@@ -54,7 +54,7 @@ func asFloats(values iList) ([]float64, error) {
 }
 
 func mustAsFloats(values iList) (result []float64) {
-	result = make([]float64, values.Len())
+	result = make([]float64, values.Count())
 	for i := range result {
 		result[i] = values.Get(i).(float64)
 	}
@@ -64,7 +64,7 @@ func mustAsFloats(values iList) (result []float64) {
 func process(arg, handler interface{}) (r interface{}, err error) {
 	defer func() { err = trapError(err, recover()) }()
 	arguments := convertArgs(arg)
-	if arguments.Len() == 0 {
+	if arguments.Count() == 0 {
 		return
 	}
 	argArray := arguments.AsArray()

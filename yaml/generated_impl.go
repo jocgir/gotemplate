@@ -12,7 +12,6 @@ type yamlIList = collections.IGenericList
 type yamlList []interface{}
 
 func (l yamlList) AsArray() []interface{} { return []interface{}(l) }
-func (l yamlList) Cap() int               { return cap(l) }
 func (l yamlList) Capacity() int          { return cap(l) }
 func (l yamlList) Clone() yamlIList       { return yamlListHelper.Clone(l) }
 func (l yamlList) Contains(values ...interface{}) bool {
@@ -29,7 +28,6 @@ func (l yamlList) Get(indexes ...int) interface{} {
 }
 func (l yamlList) Has(values ...interface{}) bool    { return l.Contains(values...) }
 func (l yamlList) Last() interface{}                 { return yamlListHelper.GetIndexes(l, len(l)-1) }
-func (l yamlList) Len() int                          { return len(l) }
 func (l yamlList) New(args ...interface{}) yamlIList { return yamlListHelper.NewList(args...) }
 func (l yamlList) Reverse() yamlIList                { return yamlListHelper.Reverse(l) }
 func (l yamlList) Strings() []string                 { return yamlListHelper.GetStrings(l) }
@@ -86,7 +84,6 @@ func (d yamlDict) Add(key, v interface{}) yamlIDict    { return yamlDictHelper.A
 func (d yamlDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
 func (d yamlDict) Native() interface{}                 { return collections.ToNativeRepresentation(d) }
 func (d yamlDict) Count() int                          { return len(d) }
-func (d yamlDict) Len() int                            { return len(d) }
 func (d yamlDict) Clone(keys ...interface{}) yamlIDict { return yamlDictHelper.Clone(d, keys) }
 func (d yamlDict) Create(args ...int) yamlIDict        { return yamlListHelper.CreateDictionary(args...) }
 func (d yamlDict) CreateList(args ...int) yamlIList    { return yamlHelper.CreateList(args...) }

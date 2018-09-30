@@ -14,7 +14,6 @@ GetKeys() IGenericList
 GetValues() IGenericList
 Has(...interface{}) bool
 KeysAsString() StringArray
-Len() int
 Merge(IDictionary, ...IDictionary) IDictionary
 Native() interface{}
 Omit(interface{}, ...interface{}) IDictionary

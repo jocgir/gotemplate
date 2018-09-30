@@ -1,7 +1,6 @@
 ```go
 @Append(...interface{}) IGenericList
 AsArray() []interface{}
-Cap() int
 Capacity() int
 Clone() IGenericList
 Contains(...interface{}) bool
@@ -15,7 +14,6 @@ Has(...interface{}) bool
 Intersect(...interface{}) IGenericList
 Join(interface{}) String
 Last() interface{}
-Len() int
 New(...interface{}) IGenericList
 Pop(...int) interface{}, IGenericList
 Prepend(...interface{}) IGenericList

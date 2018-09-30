@@ -12,7 +12,6 @@ type hclIList = collections.IGenericList
 type hclList []interface{}
 
 func (l hclList) AsArray() []interface{} { return []interface{}(l) }
-func (l hclList) Cap() int               { return cap(l) }
 func (l hclList) Capacity() int          { return cap(l) }
 func (l hclList) Clone() hclIList        { return hclListHelper.Clone(l) }
 func (l hclList) Contains(values ...interface{}) bool {
@@ -29,7 +28,6 @@ func (l hclList) Get(indexes ...int) interface{} {
 }
 func (l hclList) Has(values ...interface{}) bool   { return l.Contains(values...) }
 func (l hclList) Last() interface{}                { return hclListHelper.GetIndexes(l, len(l)-1) }
-func (l hclList) Len() int                         { return len(l) }
 func (l hclList) New(args ...interface{}) hclIList { return hclListHelper.NewList(args...) }
 func (l hclList) Reverse() hclIList                { return hclListHelper.Reverse(l) }
 func (l hclList) Strings() []string                { return hclListHelper.GetStrings(l) }
@@ -86,7 +84,6 @@ func (d hclDict) Add(key, v interface{}) hclIDict     { return hclDictHelper.Add
 func (d hclDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
 func (d hclDict) Native() interface{}                 { return collections.ToNativeRepresentation(d) }
 func (d hclDict) Count() int                          { return len(d) }
-func (d hclDict) Len() int                            { return len(d) }
 func (d hclDict) Clone(keys ...interface{}) hclIDict  { return hclDictHelper.Clone(d, keys) }
 func (d hclDict) Create(args ...int) hclIDict         { return hclListHelper.CreateDictionary(args...) }
 func (d hclDict) CreateList(args ...int) hclIList     { return hclHelper.CreateList(args...) }

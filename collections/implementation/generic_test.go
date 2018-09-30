@@ -116,9 +116,6 @@ func Test_list_Capacity(t *testing.T) {
 			if got := tt.l.Capacity(); got != tt.want {
 				t.Errorf("baseList.Capacity() = %v, want %v", got, tt.want)
 			}
-			if tt.l.Capacity() != tt.l.Cap() {
-				t.Errorf("Cap and Capacity return different values")
-			}
 		})
 	}
 }
@@ -171,7 +168,7 @@ func Test_list_Get(t *testing.T) {
 	}
 }
 
-func Test_list_Len(t *testing.T) {
+func Test_list_Count(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -185,11 +182,8 @@ func Test_list_Len(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.l.Len(); got != tt.want {
-				t.Errorf("baseList.Len() = %v, want %v", got, tt.want)
-			}
-			if tt.l.Len() != tt.l.Count() {
-				t.Errorf("Len and Count return different values")
+			if got := tt.l.Count(); got != tt.want {
+				t.Errorf("baseList.Count() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -217,8 +211,8 @@ func Test_CreateList(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CreateList():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
 			}
-			if got.Capacity() != tt.want.Cap() {
-				t.Errorf("CreateList() capacity:\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got.Cap(), tt.want.Capacity())
+			if got.Capacity() != tt.want.Capacity() {
+				t.Errorf("CreateList() capacity:\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got.Capacity(), tt.want.Capacity())
 			}
 		})
 		if (err != nil) != tt.wantErr {
@@ -632,9 +626,6 @@ func Test_dict_Clone(t *testing.T) {
 			if !got.Has("NewFields") || !reflect.DeepEqual(got.Get("NewFields"), "Test") {
 				t.Errorf("Element has not been added")
 			}
-			if got.Len() != tt.want.Count()+1 {
-				t.Errorf("Len and Count don't return the same value")
-			}
 		})
 	}
 }
@@ -647,7 +638,7 @@ func Test_baseDict_CreateList(t *testing.T) {
 		d            baseDict
 		args         []int
 		want         baseIList
-		wantLen      int
+		wantCount    int
 		wantCapacity int
 	}{
 		{"Nil", nil, nil, baseList{}, 0, 0},
@@ -663,8 +654,8 @@ func Test_baseDict_CreateList(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("baseDict.CreateList() = %v, want %v", got, tt.want)
 			}
-			if got.Len() != tt.wantLen || got.Cap() != tt.wantCapacity {
-				t.Errorf("baseDict.CreateList() size: %d, %d vs %d, %d", got.Len(), got.Cap(), tt.wantLen, tt.wantCapacity)
+			if got.Count() != tt.wantCount || got.Capacity() != tt.wantCapacity {
+				t.Errorf("baseDict.CreateList() size: %d, %d vs %d, %d", got.Count(), got.Capacity(), tt.wantCount, tt.wantCapacity)
 			}
 		})
 	}

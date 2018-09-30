@@ -10,7 +10,6 @@ type baseIList = collections.IGenericList
 type baseList []interface{}
 
 func (l baseList) AsArray() []interface{}              { return []interface{}(l) }
-func (l baseList) Cap() int                            { return cap(l) }
 func (l baseList) Capacity() int                       { return cap(l) }
 func (l baseList) Clone() baseIList                    { return baseListHelper.Clone(l) }
 func (l baseList) Contains(values ...interface{}) bool { return baseListHelper.Contains(l, values...) }
@@ -21,7 +20,6 @@ func (l baseList) First() interface{}                  { return baseListHelper.G
 func (l baseList) Get(indexes ...int) interface{}      { return baseListHelper.GetIndexes(l, indexes...) }
 func (l baseList) Has(values ...interface{}) bool      { return l.Contains(values...) }
 func (l baseList) Last() interface{}                   { return baseListHelper.GetIndexes(l, len(l)-1) }
-func (l baseList) Len() int                            { return len(l) }
 func (l baseList) New(args ...interface{}) baseIList   { return baseListHelper.NewList(args...) }
 func (l baseList) Reverse() baseIList                  { return baseListHelper.Reverse(l) }
 func (l baseList) Strings() []string                   { return baseListHelper.GetStrings(l) }
@@ -78,7 +76,6 @@ func (d baseDict) Add(key, v interface{}) baseIDict    { return baseDictHelper.A
 func (d baseDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
 func (d baseDict) Native() interface{}                 { return collections.ToNativeRepresentation(d) }
 func (d baseDict) Count() int                          { return len(d) }
-func (d baseDict) Len() int                            { return len(d) }
 func (d baseDict) Clone(keys ...interface{}) baseIDict { return baseDictHelper.Clone(d, keys) }
 func (d baseDict) Create(args ...int) baseIDict        { return baseListHelper.CreateDictionary(args...) }
 func (d baseDict) CreateList(args ...int) baseIList    { return baseHelper.CreateList(args...) }

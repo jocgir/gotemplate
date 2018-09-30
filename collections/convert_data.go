@@ -110,7 +110,7 @@ func toBash(value interface{}, level int) (result string) {
 	}
 
 	if value, err := TryAsDictionary(value); err == nil {
-		results := make([]string, value.Len())
+		results := make([]string, value.Count())
 		vMap := value.AsMap()
 		switch level {
 		case 0:

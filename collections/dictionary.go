@@ -9,7 +9,7 @@ type IDictionary interface {
 	Add(key, value interface{}) IDictionary                  // Add value to key (if key exist, convert the key value into list and append the new value).
 	AsMap() map[string]interface{}                           // Returns the object casted as map[string]interface{}.
 	Clone(...interface{}) IDictionary                        // Returns a distinct copy of the object with only supplied keys. If no keys are supplied, all keys from d are copied.
-	Count() int                                              // Simply an alias for Len.
+	Count() int                                              // Returns the number of keys in the dictionary.
 	Create(...int) IDictionary                               // Instantiates a new dictionary of the same type with optional size.
 	CreateList(...int) IGenericList                          // Instantiates a list of the same type as current dictionary with optional size and capacity.
 	Default(key, defVal interface{}) interface{}             // Returns defVal if dictionary doesn't contain key, otherwise, simply returns entry corresponding to key.
@@ -21,7 +21,6 @@ type IDictionary interface {
 	GetValues() IGenericList                                 // Returns the values in the dictionary in alphabetical order of keys.
 	Has(...interface{}) bool                                 // Returns true if the dictionary object contains all the key.
 	KeysAsString() StringArray                               // Returns the keys in the dictionary in alphabetical order.
-	Len() int                                                // Returns the number of keys in the dictionary.
 	Merge(IDictionary, ...IDictionary) IDictionary           // Merges the other dictionaries into the current dictionary.
 	Native() interface{}                                     // Returns the object casted as native go type (applied recursively).
 	Omit(interface{}, ...interface{}) IDictionary            // Returns a distinct copy of the object including all keys except specified ones.

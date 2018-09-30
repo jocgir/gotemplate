@@ -14,7 +14,7 @@ func MergeLists(lists ...collections.IGenericList) collections.IGenericList {
 	case 1:
 		return lists[0]
 	}
-	result := lists[0].Create(0, lists[0].Len()*len(lists))
+	result := lists[0].Create(0, lists[0].Count()*len(lists))
 	for _, list := range lists {
 		result = result.Append(list.AsArray()...)
 	}

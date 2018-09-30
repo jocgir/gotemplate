@@ -463,7 +463,7 @@ func omit(dict iDictionary, key interface{}, otherKeys ...interface{}) iDictiona
 func pickv(dict iDictionary, message string, key interface{}, otherKeys ...interface{}) (interface{}, error) {
 	o := dict.Omit(key, otherKeys...)
 
-	if o.Len() > 0 {
+	if o.Count() > 0 {
 		over := strings.Join(toStrings(o.GetKeys()), ", ")
 		if strings.Contains(message, "%v") {
 			message = fmt.Sprintf(message, over)

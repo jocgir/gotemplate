@@ -31,7 +31,7 @@ func (dh DictHelper) Clone(dict baseIDict, keys []interface{}) baseIDict {
 	if len(keys) == 0 {
 		keys = dict.GetKeys().AsArray()
 	}
-	newDict := dh.CreateDictionary(dict.Len())
+	newDict := dh.CreateDictionary(dict.Count())
 	for i := range keys {
 		value := dict.Get(keys[i])
 		if value != nil {
@@ -90,13 +90,13 @@ func (dh DictHelper) Has(dict baseIDict, keys []interface{}) bool {
 			return false
 		}
 	}
-	return dict.Len() > 0
+	return dict.Count() > 0
 }
 
 // GetKeys returns the keys in the dictionary in alphabetical order.
 func (dh DictHelper) GetKeys(dict baseIDict) baseIList {
 	keys := dict.KeysAsString()
-	result := dh.CreateList(dict.Len())
+	result := dh.CreateList(dict.Count())
 
 	for i := range keys {
 		result.Set(i, keys[i])
@@ -106,7 +106,7 @@ func (dh DictHelper) GetKeys(dict baseIDict) baseIList {
 
 // KeysAsString returns the keys in the dictionary in alphabetical order.
 func (dh DictHelper) KeysAsString(dict baseIDict) collections.StringArray {
-	keys := make(collections.StringArray, 0, dict.Len())
+	keys := make(collections.StringArray, 0, dict.Count())
 	for key := range dict.AsMap() {
 		keys = append(keys, str(key))
 	}
@@ -131,7 +131,7 @@ func (dh DictHelper) Omit(dict baseIDict, keys []interface{}) baseIDict {
 	for i := range keys {
 		omitKeys[fmt.Sprint(keys[i])] = true
 	}
-	keep := make([]interface{}, 0, dict.Len())
+	keep := make([]interface{}, 0, dict.Count())
 	for key := range dict.AsMap() {
 		if !omitKeys[key] {
 			keep = append(keep, key)
@@ -182,7 +182,7 @@ func (dh DictHelper) Add(dict baseIDict, key interface{}, value interface{}) bas
 
 // GetValues returns the values in the dictionary in key alphabetical order.
 func (dh DictHelper) GetValues(dict baseIDict) baseIList {
-	result := dh.CreateList(dict.Len())
+	result := dh.CreateList(dict.Count())
 	for i, key := range dict.KeysAsString() {
 		result.Set(i, dict.Get(key))
 	}

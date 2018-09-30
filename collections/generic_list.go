@@ -8,11 +8,10 @@ import (
 type IGenericList interface {
 	Append(...interface{}) IGenericList                     // Add elements to the current list. If list is not large enough, it is enlarged to fit the required size.
 	AsArray() []interface{}                                 // Returns the current list as standard array of interface{}.
-	Cap() int                                               // Returns the capacity of the list.
-	Capacity() int                                          // Simply an alias for Cap.
+	Capacity() int                                          // Returns the capacity of the list.
 	Clone() IGenericList                                    // Returns a distinct copy of the object.
 	Contains(...interface{}) bool                           // Indicates if the list contains all specified elements
-	Count() int                                             // Simply an alias for Len.
+	Count() int                                             // Returns the number of elements in the list.
 	Create(...int) IGenericList                             // Allocates a new list of the same type implementation as this list. Optional arguments are size and capacity.
 	CreateDict(...int) IDictionary                          // Instantiates a new dictionary of the same type with optional size.
 	First() interface{}                                     // Returns the first element of the list.
@@ -22,7 +21,6 @@ type IGenericList interface {
 	Intersect(...interface{}) IGenericList                  // Returns a list that is the result of the intersection of the list and the parameters (removing duplicates).
 	Join(sep interface{}) String                            // Returns the string representation of the list.
 	Last() interface{}                                      // Returns the last element of the list.
-	Len() int                                               // Returns the number of elements in the list.
 	New(...interface{}) IGenericList                        // Creates a new generic list from the supplied arguments.
 	Pop(indexes ...int) (interface{}, IGenericList)         // Removes and returns the elements of the list (if nothing is specified, remove the last element).
 	Prepend(...interface{}) IGenericList                    // Add elements to the beginning of the current list. If list is not large enough, it is enlarged to fit the required size.

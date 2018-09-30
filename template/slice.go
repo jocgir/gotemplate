@@ -86,8 +86,8 @@ func sliceMap(value interface{}, extract bool, args ...interface{}) (interface{}
 				k1, k2 = k2, k1
 			}
 
-			results := dict.CreateList(0, dict.Len()*20)
-			for i := 0; i < keys.Len(); i++ {
+			results := dict.CreateList(0, dict.Count()*20)
+			for i := 0; i < keys.Count(); i++ {
 				k := fmt.Sprint(keys.Get(i))
 				if k >= k1 && k <= k2 {
 					results = results.Append(dict.Get(k))

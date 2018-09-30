@@ -40,9 +40,9 @@ func (lh ListHelper) GetIndexes(list baseIList, indexes ...int) interface{} {
 		index := indexes[0]
 		if index < 0 {
 			// If index is negative, we try to get from the end
-			index += list.Len()
+			index += list.Count()
 		}
-		if index < 0 || index >= list.Len() {
+		if index < 0 || index >= list.Count() {
 			return nil
 		}
 		return (list.AsArray())[index]
@@ -61,8 +61,8 @@ func (lh ListHelper) GetStrings(list baseIList) []string {
 
 // GetStringArray returns a StringArray representation of the list.
 func (lh ListHelper) GetStringArray(list baseIList) strArray {
-	result := make(strArray, list.Len())
-	for i := 0; i < list.Len(); i++ {
+	result := make(strArray, list.Count())
+	for i := 0; i < list.Count(); i++ {
 		result[i] = str(fmt.Sprint(list.Get(i)))
 	}
 	return result
@@ -100,9 +100,9 @@ func (bh BaseHelper) NewStringList(items ...string) baseIList {
 // Reverse returns a copy of the current list in reverse order.
 func (lh ListHelper) Reverse(list baseIList) baseIList {
 	source := list.AsArray()
-	target := lh.CreateList(list.Len())
+	target := lh.CreateList(list.Count())
 	for i := range source {
-		target.Set(target.Len()-i-1, source[i])
+		target.Set(target.Count()-i-1, source[i])
 	}
 	return lh.ConvertList(target)
 }
@@ -112,7 +112,7 @@ func (lh ListHelper) SetIndex(list baseIList, index int, value interface{}) (bas
 	if index < 0 {
 		return nil, fmt.Errorf("index must be positive number")
 	}
-	for list.Len() <= index {
+	for list.Count() <= index {
 		list = lh.Add(list, false, nil)
 	}
 	list.AsArray()[index] = lh.Convert(value)
@@ -128,7 +128,7 @@ var _ = func() int {
 // Unique returns a copy of the list removing all duplicate elements.
 func (lh ListHelper) Unique(list baseIList) baseIList {
 	source := list.AsArray()
-	target := lh.CreateList(0, list.Len())
+	target := lh.CreateList(0, list.Count())
 	for i := range source {
 		if !target.Contains(source[i]) {
 			target = target.Append(source[i])
@@ -141,7 +141,7 @@ func (lh ListHelper) Unique(list baseIList) baseIList {
 func (lh ListHelper) Intersect(list baseIList, values ...interface{}) baseIList {
 	source := list.Unique().AsArray()
 	include := collections.AsList(values)
-	target := lh.CreateList(0, include.Len())
+	target := lh.CreateList(0, include.Count())
 	for i := range source {
 		if include.Contains(source[i]) {
 			target = target.Append(source[i])
@@ -154,11 +154,11 @@ func (lh ListHelper) Intersect(list baseIList, values ...interface{}) baseIList 
 func (lh ListHelper) Remove(list baseIList, indexes ...int) baseIList {
 	for i, index := range indexes {
 		if index < 0 {
-			indexes[i] += list.Len()
+			indexes[i] += list.Count()
 		}
 	}
 	discard := collections.AsList(indexes)
-	target := list.Create(0, list.Len())
+	target := list.Create(0, list.Count())
 	for i := range list.AsArray() {
 		if !discard.Contains(i) {
 			target = target.Append(list.Get(i))
@@ -171,7 +171,7 @@ func (lh ListHelper) Remove(list baseIList, indexes ...int) baseIList {
 func (lh ListHelper) Without(list baseIList, values ...interface{}) baseIList {
 	source := list.AsArray()
 	exclude := collections.AsList(values)
-	target := lh.CreateList(0, list.Len())
+	target := lh.CreateList(0, list.Count())
 	for i := range source {
 		if !exclude.Contains(source[i]) {
 			target = target.Append(source[i])

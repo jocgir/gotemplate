@@ -12,7 +12,6 @@ type xmlIList = collections.IGenericList
 type xmlList []interface{}
 
 func (l xmlList) AsArray() []interface{} { return []interface{}(l) }
-func (l xmlList) Cap() int               { return cap(l) }
 func (l xmlList) Capacity() int          { return cap(l) }
 func (l xmlList) Clone() xmlIList        { return xmlListHelper.Clone(l) }
 func (l xmlList) Contains(values ...interface{}) bool {
@@ -29,7 +28,6 @@ func (l xmlList) Get(indexes ...int) interface{} {
 }
 func (l xmlList) Has(values ...interface{}) bool   { return l.Contains(values...) }
 func (l xmlList) Last() interface{}                { return xmlListHelper.GetIndexes(l, len(l)-1) }
-func (l xmlList) Len() int                         { return len(l) }
 func (l xmlList) New(args ...interface{}) xmlIList { return xmlListHelper.NewList(args...) }
 func (l xmlList) Reverse() xmlIList                { return xmlListHelper.Reverse(l) }
 func (l xmlList) Strings() []string                { return xmlListHelper.GetStrings(l) }
@@ -86,7 +84,6 @@ func (d xmlDict) Add(key, v interface{}) xmlIDict     { return xmlDictHelper.Add
 func (d xmlDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
 func (d xmlDict) Native() interface{}                 { return collections.ToNativeRepresentation(d) }
 func (d xmlDict) Count() int                          { return len(d) }
-func (d xmlDict) Len() int                            { return len(d) }
 func (d xmlDict) Clone(keys ...interface{}) xmlIDict  { return xmlDictHelper.Clone(d, keys) }
 func (d xmlDict) Create(args ...int) xmlIDict         { return xmlListHelper.CreateDictionary(args...) }
 func (d xmlDict) CreateList(args ...int) xmlIList     { return xmlHelper.CreateList(args...) }

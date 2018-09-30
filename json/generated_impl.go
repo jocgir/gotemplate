@@ -12,7 +12,6 @@ type jsonIList = collections.IGenericList
 type jsonList []interface{}
 
 func (l jsonList) AsArray() []interface{} { return []interface{}(l) }
-func (l jsonList) Cap() int               { return cap(l) }
 func (l jsonList) Capacity() int          { return cap(l) }
 func (l jsonList) Clone() jsonIList       { return jsonListHelper.Clone(l) }
 func (l jsonList) Contains(values ...interface{}) bool {
@@ -29,7 +28,6 @@ func (l jsonList) Get(indexes ...int) interface{} {
 }
 func (l jsonList) Has(values ...interface{}) bool    { return l.Contains(values...) }
 func (l jsonList) Last() interface{}                 { return jsonListHelper.GetIndexes(l, len(l)-1) }
-func (l jsonList) Len() int                          { return len(l) }
 func (l jsonList) New(args ...interface{}) jsonIList { return jsonListHelper.NewList(args...) }
 func (l jsonList) Reverse() jsonIList                { return jsonListHelper.Reverse(l) }
 func (l jsonList) Strings() []string                 { return jsonListHelper.GetStrings(l) }
@@ -86,7 +84,6 @@ func (d jsonDict) Add(key, v interface{}) jsonIDict    { return jsonDictHelper.A
 func (d jsonDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
 func (d jsonDict) Native() interface{}                 { return collections.ToNativeRepresentation(d) }
 func (d jsonDict) Count() int                          { return len(d) }
-func (d jsonDict) Len() int                            { return len(d) }
 func (d jsonDict) Clone(keys ...interface{}) jsonIDict { return jsonDictHelper.Clone(d, keys) }
 func (d jsonDict) Create(args ...int) jsonIDict        { return jsonListHelper.CreateDictionary(args...) }
 func (d jsonDict) CreateList(args ...int) jsonIList    { return jsonHelper.CreateList(args...) }
