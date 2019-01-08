@@ -30,10 +30,12 @@ func (l xmlList) Has(values ...interface{}) bool   { return l.Contains(values...
 func (l xmlList) Last() interface{}                { return xmlListHelper.GetIndexes(l, len(l)-1) }
 func (l xmlList) New(args ...interface{}) xmlIList { return xmlListHelper.NewList(args...) }
 func (l xmlList) Reverse() xmlIList                { return xmlListHelper.Reverse(l) }
-func (l xmlList) Strings() []string                { return xmlListHelper.GetStrings(l) }
-func (l xmlList) StringArray() strArray            { return xmlListHelper.GetStringArray(l) }
-func (l xmlList) TypeName() str                    { return "Xml" }
-func (l xmlList) Join(sep interface{}) str         { return l.StringArray().Join(sep) }
+func (l xmlList) Sorted() xmlIList                 { return xmlListHelper.Sorted(l) }
+func (l xmlList) Strings() StringArray             { return xmlListHelper.GetStrings(l) }
+func (l xmlList) StdStrings() []string             { return xmlListHelper.GetStdStrings(l) }
+func (l xmlList) TypeName() String                 { return "Xml" }
+func (l xmlList) Join(sep IString) String          { return xmlListHelper.Join(l, sep) }
+func (l xmlList) JoinLines() String                { return xmlListHelper.Join(l, "\n") }
 func (l xmlList) Unique() xmlIList                 { return xmlListHelper.Unique(l) }
 
 func (l xmlList) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
@@ -90,13 +92,12 @@ func (d xmlDict) CreateList(args ...int) xmlIList     { return xmlHelper.CreateL
 func (d xmlDict) Flush(keys ...interface{}) xmlIDict  { return xmlDictHelper.Flush(d, keys) }
 func (d xmlDict) Get(keys ...interface{}) interface{} { return xmlDictHelper.Get(d, keys) }
 func (d xmlDict) Has(keys ...interface{}) bool        { return xmlDictHelper.Has(d, keys) }
-func (d xmlDict) GetKeys() xmlIList                   { return xmlDictHelper.GetKeys(d) }
-func (d xmlDict) KeysAsString() strArray              { return xmlDictHelper.KeysAsString(d) }
+func (d xmlDict) GetKeys() StringArray                { return xmlDictHelper.GetKeys(d) }
 func (d xmlDict) Pop(keys ...interface{}) interface{} { return xmlDictHelper.Pop(d, keys) }
 func (d xmlDict) GetValues() xmlIList                 { return xmlDictHelper.GetValues(d) }
 func (d xmlDict) Set(key, v interface{}) xmlIDict     { return xmlDictHelper.Set(d, key, v) }
 func (d xmlDict) Transpose() xmlIDict                 { return xmlDictHelper.Transpose(d) }
-func (d xmlDict) TypeName() str                       { return "Xml" }
+func (d xmlDict) TypeName() String                    { return "Xml" }
 
 func (d xmlDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
 	return xmlDictHelper, xmlListHelper
@@ -130,14 +131,25 @@ var xmlListHelper = helperList{BaseHelper: xmlHelper}
 var xmlDictHelper = helperDict{BaseHelper: xmlHelper}
 
 // DictionaryHelper gives public access to the basic dictionary functions
-var DictionaryHelper collections.IDictionaryHelper = xmlDictHelper
+var DictionaryHelper = xmlDictHelper
 
 // GenericListHelper gives public access to the basic list functions
-var GenericListHelper collections.IListHelper = xmlListHelper
+var GenericListHelper = xmlListHelper
 
 type (
-	str      = collections.String
-	strArray = collections.StringArray
+	// String imported from collections
+	String = collections.String
+
+	// StringArray imported from collections
+	StringArray = collections.StringArray
+
+	// IString imported from collections
+	IString = collections.IString
 )
 
-var iif = collections.IIf
+// Vars imported from collections
+var (
+	IIf         = collections.IIf
+	AsString    = collections.AsString
+	AsStdString = collections.AsStdString
+)

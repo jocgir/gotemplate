@@ -16,7 +16,7 @@ func (t *Template) applyRazor(content []byte) []byte {
 	}
 	t.ensureInit()
 
-	for _, r := range replacementsInit[fmt.Sprint(t.delimiters)] {
+	for _, r := range replacementsInit[asStdString(t.delimiters)] {
 		printDebugInfo(r, string(content))
 		if r.parser == nil {
 			content = r.re.ReplaceAll(content, []byte(r.replace))
@@ -207,7 +207,7 @@ func printDebugInfo(r replacement, content string) {
 		}
 		lines := strings.Split(found, "\n")
 		for i := range lines {
-			lines[i] = fmt.Sprintf("%v%s", iif(i > 0, "  ", ""), highlight(lines[i]))
+			lines[i] = fmt.Sprintf("%v%s", IIf(i > 0, "  ", ""), highlight(lines[i]))
 		}
 		found = strings.Join(lines, "\n")
 		allUnique[found] = allUnique[found] + 1

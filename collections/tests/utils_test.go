@@ -1,4 +1,4 @@
-package collections
+package tests
 
 import (
 	"reflect"

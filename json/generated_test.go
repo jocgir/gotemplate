@@ -5,16 +5,17 @@
 package json
 
 import (
-	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/coveo/gotemplate/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var strFixture = jsonList(jsonListHelper.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
+var (
+	strFixture = String("Hello World, I'm Foo Bar!").Split(" ")
+	strList    = jsonListHelper.NewStringList
+)
 
 func Test_list_Append(t *testing.T) {
 	t.Parallel()
@@ -67,7 +68,7 @@ func Test_list_AsArray(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    jsonList
+		l    jsonIList
 		want []interface{}
 	}{
 		{"Empty List", jsonList{}, []interface{}{}},
@@ -88,12 +89,12 @@ func Test_JsonList_Strings(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    jsonList
-		want []string
+		l    jsonIList
+		want StringArray
 	}{
-		{"Empty List", jsonList{}, []string{}},
-		{"List of int", jsonList{1, 2, 3}, []string{"1", "2", "3"}},
-		{"List of string", strFixture, []string{"Hello", "World,", "I'm", "Foo", "Bar!"}},
+		{"Empty List", jsonList{}, StringArray{}},
+		{"List of int", jsonList{1, 2, 3}, StringArray{"1", "2", "3"}},
+		{"List of string", strFixture, StringArray{"Hello", "World,", "I'm", "Foo", "Bar!"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -128,7 +129,7 @@ func Test_list_Clone(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    jsonList
+		l    jsonIList
 		want jsonIList
 	}{
 		{"Empty List", jsonList{}, jsonList{}},
@@ -149,7 +150,7 @@ func Test_list_Get(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		l       jsonList
+		l       jsonIList
 		indexes []int
 		want    interface{}
 	}{
@@ -176,7 +177,7 @@ func Test_list_Count(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    jsonList
+		l    jsonIList
 		want int
 	}{
 		{"Empty List", jsonList{}, 0},
@@ -476,9 +477,8 @@ func Test_list_Unique(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		l    jsonList
-		want jsonList
+		name    string
+		l, want jsonList
 	}{
 		{"Empty List", nil, jsonList{}},
 		{"Remove nothing", jsonList{1}, jsonList{1}},
@@ -497,9 +497,8 @@ func Test_list_Reverse(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		l    jsonList
-		want jsonIList
+		name    string
+		l, want jsonIList
 	}{
 		{"Empty List", jsonList{}, jsonList{}},
 		{"List of int", jsonList{1, 2, 3}, jsonList{3, 2, 1}},
@@ -797,32 +796,12 @@ func Test_dict_Keys(t *testing.T) {
 		want jsonIList
 	}{
 		{"Empty", nil, jsonList{}},
-		{"Map", dictFixture, jsonList{str("float"), str("int"), str("list"), str("listInt"), str("map"), str("mapInt"), str("string")}},
+		{"Map", dictFixture, strList("float", "int", "list", "listInt", "map", "mapInt", "string")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.d.GetKeys(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("JsonDict.GetKeys():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_dict_KeysAsString(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name string
-		d    jsonDict
-		want strArray
-	}{
-		{"Empty", nil, strArray{}},
-		{"Map", dictFixture, strArray{"float", "int", "list", "listInt", "map", "mapInt", "string"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.d.KeysAsString(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("JsonDict.KeysAsString():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
 			}
 		})
 	}
@@ -986,10 +965,10 @@ func Test_dict_Transpose(t *testing.T) {
 		want jsonIDict
 	}{
 		{"Empty", nil, jsonDict{}},
-		{"Base", jsonDict{"A": 1}, jsonDict{"1": str("A")}},
-		{"Multiple", jsonDict{"A": 1, "B": 2, "C": 1}, jsonDict{"1": jsonList{str("A"), str("C")}, "2": str("B")}},
-		{"List", jsonDict{"A": []int{1, 2, 3}, "B": 2, "C": 3}, jsonDict{"1": str("A"), "2": jsonList{str("A"), str("B")}, "3": jsonList{str("A"), str("C")}}},
-		{"Complex", jsonDict{"A": jsonDict{"1": 1, "2": 2}, "B": 2, "C": 3}, jsonDict{"2": str("B"), "3": str("C"), fmt.Sprint(jsonDict{"1": 1, "2": 2}): str("A")}},
+		{"Base", jsonDict{"A": 1}, jsonDict{"1": String("A")}},
+		{"Multiple", jsonDict{"A": 1, "B": 2, "C": 1}, jsonDict{"1": strList("A", "C"), "2": String("B")}},
+		{"List", jsonDict{"A": []int{1, 2, 3}, "B": 2, "C": 3}, jsonDict{"1": String("A"), "2": strList("A", "B"), "3": strList("A", "C")}},
+		{"Complex", jsonDict{"A": jsonDict{"1": 1, "2": 2}, "B": 2, "C": 3}, jsonDict{"2": String("B"), "3": String("C"), AsStdString(jsonDict{"1": 1, "2": 2}): String("A")}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1025,7 +1004,7 @@ func Test_JsonList_TypeName(t *testing.T) {
 	tests := []struct {
 		name string
 		l    jsonList
-		want str
+		want String
 	}{
 		// TODO: Add test cases.
 	}
@@ -1039,8 +1018,8 @@ func Test_JsonList_TypeName(t *testing.T) {
 }
 
 func Test_Json_TypeName(t *testing.T) {
-	t.Run("list", func(t *testing.T) { assert.Equal(t, jsonList{}.TypeName(), str("Json")) })
-	t.Run("dict", func(t *testing.T) { assert.Equal(t, jsonDict{}.TypeName(), str("Json")) })
+	t.Run("list", func(t *testing.T) { assert.Equal(t, jsonList{}.TypeName(), String("Json")) })
+	t.Run("dict", func(t *testing.T) { assert.Equal(t, jsonDict{}.TypeName(), String("Json")) })
 }
 
 func Test_Json_GetHelper(t *testing.T) {

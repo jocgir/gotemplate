@@ -6,7 +6,13 @@
 
 package template
 
-import "strings"
+import (
+	"reflect"
+	"sort"
+	"strings"
+
+	"github.com/coveo/gotemplate/text/template/parse"
+)
 
 // missingKeyAction defines how to respond to indexing a map with a key that is not present.
 type missingKeyAction int
@@ -17,9 +23,31 @@ const (
 	mapError                             // Error out
 )
 
+// MissingHandler represents the function type used to try to recover missing key during the template evaluation.
+type MissingHandler func(fieldName string, receiver reflect.Value, node parse.Node) (interface{}, MissingAction)
+
+// MissingAction defines the action done by external handler when managing missing key.
+type MissingAction int
+
+const (
+	// NoReplace is returned if the external handler has not been able to fix the missing key
+	NoReplace MissingAction = iota
+
+	// MissingReplaced is returned if the external handler returned a valid replacement for the missing key
+	MissingReplaced
+
+	// ReceiverIsArray is returned if the external handler returned an array on which we should apply the missing key
+	ReceiverIsArray
+)
+
 type option struct {
-	missingKey missingKeyAction
+	missingKey          missingKeyAction
+	missingHandlers     map[string]MissingHandler
+	missingHandlersKeys []string
 }
+
+// NoValue is the rendered string representation of invalid value if missingkey is set to invalid or left to default.
+const NoValue = "<no value>"
 
 // Option sets options for the template. Options are described by
 // strings, either a simple string or "key=value". There can be at
@@ -71,4 +99,36 @@ func (t *Template) setOption(opt string) {
 		}
 	}
 	panic("unrecognized option: " + opt)
+}
+
+// AddMissingHandler allows registration of function that could handle missing keys.
+// This give the caller opportunity to recover errors and/or add custom values other that that default actions.
+func (t *Template) AddMissingHandler(name string, handler MissingHandler) {
+	t.option.addMissingHandler(name, handler)
+}
+
+func (o *option) addMissingHandler(name string, handler MissingHandler) {
+	if o.missingHandlers == nil {
+		o.missingHandlers = make(map[string]MissingHandler)
+	}
+	if handler == nil {
+		delete(o.missingHandlers, name)
+	} else {
+		o.missingHandlers[name] = handler
+	}
+
+	o.missingHandlersKeys = make([]string, 0, len(o.missingHandlers))
+	for key := range o.missingHandlers {
+		o.missingHandlersKeys = append(o.missingHandlersKeys, key)
+	}
+	sort.Strings(o.missingHandlersKeys)
+}
+
+func (o *option) invoke(fieldName string, receiver reflect.Value, node parse.Node) (result reflect.Value, action MissingAction) {
+	for _, key := range o.missingHandlersKeys {
+		if value, missedAction := o.missingHandlers[key](fieldName, receiver, node); missedAction != NoReplace {
+			return reflect.ValueOf(value), missedAction
+		}
+	}
+	return
 }

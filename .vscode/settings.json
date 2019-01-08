@@ -1,9 +1,11 @@
 {
     "cSpell.words": [
+        "Apos",
         "Chtml",
         "Cmds",
         "Fwww",
         "Ione",
+        "Laudes",
         "SMSI",
         "UUIDs",
         "Ufour",
@@ -14,6 +16,7 @@
         "amet",
         "awrap",
         "consectetur",
+        "dicentium",
         "dolore",
         "eerr",
         "eiusmod",
@@ -23,13 +26,18 @@
         "erroozle",
         "errored",
         "errp",
+        "expedita",
         "iface",
         "imdario",
         "incididunt",
+        "initializations",
         "kindof",
         "lenc",
+        "montiumita",
+        "niladic",
         "nsed",
         "pickv",
+        "sequatur",
         "sjoin",
         "splitn",
         "structs",
@@ -38,7 +46,9 @@
         "unsplit",
         "uuid",
         "uuidv",
+        "variadics",
         "vfunc",
+        "warnf",
         "wasm"
     ]
 }

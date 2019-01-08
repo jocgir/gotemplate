@@ -616,6 +616,10 @@ func (s *state) evalField(dot reflect.Value, fieldName string, node parse.Node, 
 			}
 			result := receiver.MapIndex(nameVal)
 			if !result.IsValid() {
+				// Give the opportunity to external handlers to resolve the invalid value.
+				if result := s.tryRecoverMissingKey(dot, fieldName, node, args, final, receiver); result.IsValid() {
+					return result
+				}
 				switch s.tmpl.option.missingKey {
 				case mapInvalid:
 					// Just use the invalid value.
@@ -627,9 +631,28 @@ func (s *state) evalField(dot reflect.Value, fieldName string, node parse.Node, 
 			}
 			return result
 		}
+	default:
+		if result := s.tryRecoverMissingKey(dot, fieldName, node, args, final, receiver); result.IsValid() {
+			return result
+		}
 	}
 	s.errorf("can't evaluate field %s in type %s", fieldName, typ)
 	panic("not reached")
+}
+
+func (s *state) tryRecoverMissingKey(dot reflect.Value, fieldName string, node parse.Node, args []parse.Node, final, receiver reflect.Value) (result reflect.Value) {
+	result, action := s.tmpl.option.invoke(fieldName, receiver, node)
+	switch action {
+	case MissingReplaced:
+		return result
+	case ReceiverIsArray:
+		for i := 0; i < result.Len(); i++ {
+			value := result.Index(i)
+			value.Set(s.evalField(dot, fieldName, node, args, final, value))
+		}
+		return result
+	}
+	return
 }
 
 var (
@@ -944,7 +967,7 @@ func printableValue(v reflect.Value) (interface{}, bool) {
 		v, _ = indirect(v) // fmt.Fprint handles nil.
 	}
 	if !v.IsValid() {
-		return "<no value>", true
+		return NoValue, true
 	}
 
 	if !v.Type().Implements(errorType) && !v.Type().Implements(fmtStringerType) {

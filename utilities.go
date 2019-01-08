@@ -13,7 +13,12 @@ import (
 	goerrors "github.com/go-errors/errors"
 )
 
-var must = errors.Must
+// Imported values from subpackages
+var (
+	Must     = errors.Must
+	IIf      = collections.IIf
+	AsString = collections.AsString
+)
 
 func cleanup() {
 	os.RemoveAll(tempFolder)
@@ -34,7 +39,7 @@ func readStdin() string {
 	if stdinContent != "" {
 		return stdinContent
 	}
-	stdinContent = string(must(ioutil.ReadAll(os.Stdin)).([]byte))
+	stdinContent = string(Must(ioutil.ReadAll(os.Stdin)).([]byte))
 	return stdinContent
 }
 
@@ -50,8 +55,8 @@ func exclude(files []string, patterns []string) []string {
 	for i, file := range files {
 		var excluded bool
 		for _, pattern := range patterns {
-			file = iif(strings.ContainsAny(pattern, `/\`), file, filepath.Base(file)).(string)
-			if excluded = must(filepath.Match(pattern, file)).(bool); excluded {
+			file = IIf(strings.ContainsAny(pattern, `/\`), file, filepath.Base(file)).(string)
+			if excluded = Must(filepath.Match(pattern, file)).(bool); excluded {
 				template.Log.Noticef("%s ignored", files[i])
 				break
 			}
@@ -75,5 +80,3 @@ func extend(values []string) []string {
 	}
 	return result
 }
-
-var iif = collections.IIf

@@ -20,6 +20,11 @@ type BaseHelper struct {
 	NeedConversion func(object interface{}, strict bool) bool
 }
 
+// AsArray returns the object casted as []interface{}.
+func (bh BaseHelper) AsArray(object interface{}) []interface{} {
+	return bh.AsList(object).AsArray()
+}
+
 // AsList converts object to IGenericList object. It panics if conversion is impossible.
 func (bh BaseHelper) AsList(object interface{}) baseIList {
 	return must(bh.TryAsList(object)).(baseIList)
@@ -28,6 +33,11 @@ func (bh BaseHelper) AsList(object interface{}) baseIList {
 // AsDictionary converts object to IDictionary object. It panics if conversion is impossible.
 func (bh BaseHelper) AsDictionary(object interface{}) baseIDict {
 	return must(bh.TryAsDictionary(object)).(baseIDict)
+}
+
+// AsMap returns the object casted as map[string]interface{}.
+func (bh DictHelper) AsMap(object interface{}) map[string]interface{} {
+	return bh.AsDictionary(object).AsMap()
 }
 
 // Convert tries to convert the supplied object into IDictionary or IGenericList.
@@ -101,7 +111,7 @@ func (bh BaseHelper) tryAsDictionary(object interface{}, strict bool) (baseIDict
 				value := reflect.ValueOf(object)
 				keys := value.MapKeys()
 				for i := range keys {
-					result.Set(fmt.Sprint(keys[i]), value.MapIndex(keys[i]).Interface())
+					result.Set(keys[i], value.MapIndex(keys[i]).Interface())
 				}
 			default:
 				return nil, fmt.Errorf("Object cannot be converted to dictionary: %T", object)

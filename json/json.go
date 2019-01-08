@@ -50,7 +50,7 @@ func transform(out interface{}) {
 
 func transformElement(source interface{}) interface{} {
 	if value, err := jsonHelper.TryAsDictionary(source); err == nil {
-		for _, key := range value.KeysAsString() {
+		for _, key := range value.GetKeys() {
 			value.Set(key, transformElement(value.Get(key)))
 		}
 		source = value

@@ -1,14 +1,12 @@
 package template
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
 	"time"
 
-	"github.com/coveo/gotemplate/collections"
 	"github.com/coveo/gotemplate/utils"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
@@ -101,7 +99,7 @@ func (t *Template) addOSFuncs() {
 }
 
 func fileExists(file interface{}) (bool, error) {
-	if _, err := os.Stat(fmt.Sprint(file)); err != nil {
+	if _, err := os.Stat(asStdString(file)); err != nil {
 		if os.IsNotExist(err) {
 			err = nil
 		}
@@ -111,7 +109,7 @@ func fileExists(file interface{}) (bool, error) {
 }
 
 func fileMode(file interface{}) (os.FileMode, error) {
-	stat, err := os.Stat(fmt.Sprint(file))
+	stat, err := os.Stat(asStdString(file))
 	if err != nil {
 		return 0, err
 	}
@@ -119,7 +117,7 @@ func fileMode(file interface{}) (os.FileMode, error) {
 }
 
 func fileSize(file interface{}) (int64, error) {
-	stat, err := os.Stat(fmt.Sprint(file))
+	stat, err := os.Stat(asStdString(file))
 	if err != nil {
 		return 0, err
 	}
@@ -127,7 +125,7 @@ func fileSize(file interface{}) (int64, error) {
 }
 
 func isDir(file interface{}) (bool, error) {
-	stat, err := os.Stat(fmt.Sprint(file))
+	stat, err := os.Stat(asStdString(file))
 	if err != nil {
 		return false, err
 	}
@@ -143,7 +141,7 @@ func isFile(file interface{}) (bool, error) {
 }
 
 func isReadable(file interface{}) (bool, error) {
-	stat, err := os.Stat(fmt.Sprint(file))
+	stat, err := os.Stat(asStdString(file))
 	if err != nil {
 		return false, err
 	}
@@ -151,7 +149,7 @@ func isReadable(file interface{}) (bool, error) {
 }
 
 func isWriteable(file interface{}) (bool, error) {
-	stat, err := os.Stat(fmt.Sprint(file))
+	stat, err := os.Stat(asStdString(file))
 	if err != nil {
 		return false, err
 	}
@@ -159,7 +157,7 @@ func isWriteable(file interface{}) (bool, error) {
 }
 
 func isExecutable(file interface{}) (bool, error) {
-	stat, err := os.Stat(fmt.Sprint(file))
+	stat, err := os.Stat(asStdString(file))
 	if err != nil {
 		return false, err
 	}
@@ -167,25 +165,25 @@ func isExecutable(file interface{}) (bool, error) {
 }
 
 func lastMod(file interface{}) (time.Time, error) {
-	stat, err := os.Stat(fmt.Sprint(file))
+	stat, err := os.Stat(asStdString(file))
 	if err != nil {
 		return time.Time{}, err
 	}
 	return stat.ModTime(), nil
 }
 
-func glob(args ...interface{}) collections.IGenericList {
-	return collections.AsList(utils.GlobFuncTrim(args...))
+func glob(args ...interface{}) IGenericList {
+	return AsList(utils.GlobFuncTrim(args...))
 }
 
 func diff(text1, text2 interface{}) interface{} {
 	dmp := diffmatchpatch.New()
-	diffs := dmp.DiffMain(fmt.Sprint(text1), fmt.Sprint(text2), true)
+	diffs := dmp.DiffMain(asStdString(text1), asStdString(text2), true)
 	return dmp.DiffPrettyText(diffs)
 }
 
 func saveToFile(filename string, object interface{}) (string, error) {
-	return "", ioutil.WriteFile(filename, []byte(fmt.Sprint(object)), 0644)
+	return "", ioutil.WriteFile(filename, []byte(asStdString(object)), 0644)
 }
 
 func username() string {
@@ -213,6 +211,6 @@ func userHome() string {
 }
 
 func lookPath(file interface{}) string {
-	path, _ := exec.LookPath(fmt.Sprint(file))
+	path, _ := exec.LookPath(asStdString(file))
 	return path
 }

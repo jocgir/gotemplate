@@ -1,17 +1,17 @@
 package implementation
 
 import (
-	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/coveo/gotemplate/errors"
+	"github.com/stretchr/testify/assert"
 )
 
-var strFixture = baseList(baseListHelper.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
+var (
+	strFixture = String("Hello World, I'm Foo Bar!").Split(" ")
+	strList    = baseListHelper.NewStringList
+)
 
 func Test_list_Append(t *testing.T) {
 	t.Parallel()
@@ -64,7 +64,7 @@ func Test_list_AsArray(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    baseList
+		l    baseIList
 		want []interface{}
 	}{
 		{"Empty List", baseList{}, []interface{}{}},
@@ -85,12 +85,12 @@ func Test_baseList_Strings(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    baseList
-		want []string
+		l    baseIList
+		want StringArray
 	}{
-		{"Empty List", baseList{}, []string{}},
-		{"List of int", baseList{1, 2, 3}, []string{"1", "2", "3"}},
-		{"List of string", strFixture, []string{"Hello", "World,", "I'm", "Foo", "Bar!"}},
+		{"Empty List", baseList{}, StringArray{}},
+		{"List of int", baseList{1, 2, 3}, StringArray{"1", "2", "3"}},
+		{"List of string", strFixture, StringArray{"Hello", "World,", "I'm", "Foo", "Bar!"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -125,7 +125,7 @@ func Test_list_Clone(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    baseList
+		l    baseIList
 		want baseIList
 	}{
 		{"Empty List", baseList{}, baseList{}},
@@ -146,7 +146,7 @@ func Test_list_Get(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		l       baseList
+		l       baseIList
 		indexes []int
 		want    interface{}
 	}{
@@ -173,7 +173,7 @@ func Test_list_Count(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    baseList
+		l    baseIList
 		want int
 	}{
 		{"Empty List", baseList{}, 0},
@@ -473,9 +473,8 @@ func Test_list_Unique(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		l    baseList
-		want baseList
+		name    string
+		l, want baseList
 	}{
 		{"Empty List", nil, baseList{}},
 		{"Remove nothing", baseList{1}, baseList{1}},
@@ -494,9 +493,8 @@ func Test_list_Reverse(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		l    baseList
-		want baseIList
+		name    string
+		l, want baseIList
 	}{
 		{"Empty List", baseList{}, baseList{}},
 		{"List of int", baseList{1, 2, 3}, baseList{3, 2, 1}},
@@ -794,32 +792,12 @@ func Test_dict_Keys(t *testing.T) {
 		want baseIList
 	}{
 		{"Empty", nil, baseList{}},
-		{"Map", dictFixture, baseList{str("float"), str("int"), str("list"), str("listInt"), str("map"), str("mapInt"), str("string")}},
+		{"Map", dictFixture, strList("float", "int", "list", "listInt", "map", "mapInt", "string")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.d.GetKeys(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("baseDict.GetKeys():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_dict_KeysAsString(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name string
-		d    baseDict
-		want strArray
-	}{
-		{"Empty", nil, strArray{}},
-		{"Map", dictFixture, strArray{"float", "int", "list", "listInt", "map", "mapInt", "string"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.d.KeysAsString(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("baseDict.KeysAsString():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
 			}
 		})
 	}
@@ -983,10 +961,10 @@ func Test_dict_Transpose(t *testing.T) {
 		want baseIDict
 	}{
 		{"Empty", nil, baseDict{}},
-		{"Base", baseDict{"A": 1}, baseDict{"1": str("A")}},
-		{"Multiple", baseDict{"A": 1, "B": 2, "C": 1}, baseDict{"1": baseList{str("A"), str("C")}, "2": str("B")}},
-		{"List", baseDict{"A": []int{1, 2, 3}, "B": 2, "C": 3}, baseDict{"1": str("A"), "2": baseList{str("A"), str("B")}, "3": baseList{str("A"), str("C")}}},
-		{"Complex", baseDict{"A": baseDict{"1": 1, "2": 2}, "B": 2, "C": 3}, baseDict{"2": str("B"), "3": str("C"), fmt.Sprint(baseDict{"1": 1, "2": 2}): str("A")}},
+		{"Base", baseDict{"A": 1}, baseDict{"1": String("A")}},
+		{"Multiple", baseDict{"A": 1, "B": 2, "C": 1}, baseDict{"1": strList("A", "C"), "2": String("B")}},
+		{"List", baseDict{"A": []int{1, 2, 3}, "B": 2, "C": 3}, baseDict{"1": String("A"), "2": strList("A", "B"), "3": strList("A", "C")}},
+		{"Complex", baseDict{"A": baseDict{"1": 1, "2": 2}, "B": 2, "C": 3}, baseDict{"2": String("B"), "3": String("C"), AsStdString(baseDict{"1": 1, "2": 2}): String("A")}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1022,7 +1000,7 @@ func Test_baseList_TypeName(t *testing.T) {
 	tests := []struct {
 		name string
 		l    baseList
-		want str
+		want String
 	}{
 		// TODO: Add test cases.
 	}
@@ -1036,8 +1014,8 @@ func Test_baseList_TypeName(t *testing.T) {
 }
 
 func Test_base_TypeName(t *testing.T) {
-	t.Run("list", func(t *testing.T) { assert.Equal(t, baseList{}.TypeName(), str("base")) })
-	t.Run("dict", func(t *testing.T) { assert.Equal(t, baseDict{}.TypeName(), str("base")) })
+	t.Run("list", func(t *testing.T) { assert.Equal(t, baseList{}.TypeName(), String("base")) })
+	t.Run("dict", func(t *testing.T) { assert.Equal(t, baseDict{}.TypeName(), String("base")) })
 }
 
 func Test_base_GetHelper(t *testing.T) {

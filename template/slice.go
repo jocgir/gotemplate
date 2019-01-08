@@ -52,7 +52,7 @@ func sliceInternal(value interface{}, extract bool, args ...interface{}) (result
 			if !extract {
 				return nil, fmt.Errorf("To many parameters")
 			}
-			result := collections.AsList(value).Create(len(args))
+			result := AsList(value).Create(len(args))
 			for i := range args {
 				result.Set(i, selectElement(valueOf, toInt(args[i])))
 			}
@@ -80,7 +80,7 @@ func sliceMap(value interface{}, extract bool, args ...interface{}) (interface{}
 	case 2:
 		if !extract {
 			keys := dict.GetKeys()
-			k1, k2 := fmt.Sprint(args[0]), fmt.Sprint(args[1])
+			k1, k2 := asStdString(args[0]), asStdString(args[1])
 			if k1 > k2 {
 				keys = keys.Reverse()
 				k1, k2 = k2, k1
@@ -88,7 +88,7 @@ func sliceMap(value interface{}, extract bool, args ...interface{}) (interface{}
 
 			results := dict.CreateList(0, dict.Count()*20)
 			for i := 0; i < keys.Count(); i++ {
-				k := fmt.Sprint(keys.Get(i))
+				k := asStdString(keys.Get(i))
 				if k >= k1 && k <= k2 {
 					results = results.Append(dict.Get(k))
 				}
@@ -111,9 +111,9 @@ func sliceMap(value interface{}, extract bool, args ...interface{}) (interface{}
 func sliceList(value reflect.Value, args ...interface{}) (result interface{}, err error) {
 	length := value.Len()
 	begin := toInt(args[0])
-	begin = iif(begin < 0, length+begin+1, begin).(int)
+	begin = IIf(begin < 0, length+begin+1, begin).(int)
 	end := toInt(args[1])
-	end = iif(end < 0, length+end+1, end).(int)
+	end = IIf(end < 0, length+end+1, end).(int)
 
 	// Check if we should reverse the section
 	reverse := end < begin
@@ -136,9 +136,9 @@ func sliceList(value reflect.Value, args ...interface{}) (result interface{}, er
 
 	if begin > length {
 		// Begin is after the end
-		return collections.AsList(value.Interface()).Create(), nil
+		return AsList(value.Interface()).Create(), nil
 	}
-	results := collections.AsList(value.Interface()).Create(end - begin)
+	results := AsList(value.Interface()).Create(end - begin)
 	for i := range results.AsArray() {
 		results.Set(i, value.Index(i+begin).Interface())
 	}
@@ -149,7 +149,7 @@ func sliceList(value reflect.Value, args ...interface{}) (result interface{}, er
 }
 
 func selectElement(value reflect.Value, index int) interface{} {
-	index = iif(index < 0, value.Len()+index, index).(int)
+	index = IIf(index < 0, value.Len()+index, index).(int)
 	if value.Kind() == reflect.String {
 		return value.String()[index : index+1]
 	}
@@ -182,7 +182,7 @@ func getSingleMapElement(m interface{}) (key, value interface{}, err error) {
 
 		results := make(dictionary)
 		for i := range keys {
-			results[fmt.Sprint(keys[i])] = values[i]
+			results[asStdString(keys[i])] = values[i]
 		}
 		return keys, results, nil
 

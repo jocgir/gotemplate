@@ -30,26 +30,3 @@ func TestColor(t *testing.T) {
 		})
 	}
 }
-
-func TestFormatMessage(t *testing.T) {
-	tests := []struct {
-		name string
-		args []interface{}
-		want string
-	}{
-		{"No argument", nil, ""},
-		{"Empty arguments", []interface{}{}, ""},
-		{"Single argument", []interface{}{"Hello"}, "Hello"},
-		{"Two arguments", []interface{}{"Hello", "World"}, "Hello World"},
-		{"Two arguments with format", []interface{}{"Hello %s! %d", "World", 100}, "Hello World! 100"},
-		{"Bad format", []interface{}{"Hello %s! %d", "World"}, "Hello %s! %d World"},
-		{"Escaped %", []interface{}{"You got %d%% off", 60}, "You got 60% off"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := FormatMessage(tt.args...); got != tt.want {
-				t.Errorf("FormatMessage() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}

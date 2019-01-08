@@ -1,7 +1,6 @@
 package hcl
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -13,7 +12,7 @@ func Test_list_String(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    hclList
+		l    hclIList
 		want string
 	}{
 		{"Nil", nil, "[]"},
@@ -117,7 +116,7 @@ func TestUnmarshal(t *testing.T) {
 		{"Empty list", "[]", hclList{}, false},
 		{"List of int", "[1,2,3]", hclList{1, 2, 3}, false},
 		{"Array of map", "a { b { c { d = 1 e = 2 }}}", hclDict{"a": hclDict{"b": hclDict{"c": hclDict{"d": 1, "e": 2}}}}, false},
-		{"Map", fmt.Sprint(dictFixture), dictFixture, false},
+		{"Map", AsStdString(dictFixture), dictFixture, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -146,7 +145,7 @@ func TestUnmarshalStrict(t *testing.T) {
 		{"Empty list", "[]", nil, true},
 		{"List of int", "[1,2,3]", nil, true},
 		{"Array of map", "a { b { c { d = 1 e = 2 }}}", map[string]interface{}{"a": map[string]interface{}{"b": map[string]interface{}{"c": map[string]interface{}{"d": 1, "e": 2}}}}, false},
-		{"Map", fmt.Sprint(dictFixture), dictFixture.Native(), false},
+		{"Map", AsStdString(dictFixture), dictFixture.Native(), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

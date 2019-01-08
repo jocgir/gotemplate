@@ -35,9 +35,9 @@ func ConvertData(data string, out interface{}) (err error) {
 	defer func() {
 		if err == nil {
 			// YAML converter returns a string if it encounter invalid data, so we check the result to ensure that is is different from the input.
-			if out, isItf := out.(*interface{}); isItf && data == fmt.Sprint(*out) && strings.ContainsAny(data, "=:{}") {
+			if out, isItf := out.(*interface{}); isItf && data == AsStdString(*out) && strings.ContainsAny(data, "=:{}") {
 				if _, isString := (*out).(string); isString {
-					if trySimplified() == nil && data != fmt.Sprint(*out) {
+					if trySimplified() == nil && data != AsStdString(*out) {
 						err = nil
 						return
 					}
@@ -53,7 +53,7 @@ func ConvertData(data string, out interface{}) (err error) {
 		}
 	}()
 
-	for _, key := range AsDictionary(TypeConverters).KeysAsString() {
+	for _, key := range AsDictionary(TypeConverters).GetKeys() {
 		err = TypeConverters[key.Str()]([]byte(data), out)
 		if err == nil {
 			return
@@ -81,70 +81,70 @@ func LoadData(filename string, out interface{}) (err error) {
 }
 
 // ToBash returns the bash 4 variable representation of value
-func ToBash(value interface{}) string {
+func ToBash(value interface{}) String {
 	return toBash(ToNativeRepresentation(value), 0)
 }
 
-func toBash(value interface{}, level int) (result string) {
-	if value, isString := value.(string); isString {
+func toBash(value interface{}, level int) (result String) {
+	if v, isString := value.(string); isString {
+		value = String(v)
+	}
+
+	if value, isString := value.(String); isString {
 		result = value
-		if strings.ContainsAny(value, " \t\n[]()") {
-			result = fmt.Sprintf("%q", value)
+		if result.ContainsAny(" \t\n[]()") {
+			result = result.Format("%q")
 		}
 		return
 	}
 
 	if value, err := TryAsList(value); err == nil {
-		results := value.Strings()
-		for i := range results {
-			results[i] = quote(results[i])
+		results := value.Clone()
+		for i := range results.AsArray() {
+			results.Set(i, quote(results.Get(i)))
 		}
-		fmt.Println(results)
 		switch level {
 		case 2:
-			result = strings.Join(results, ",")
+			result = results.Join(",")
 		default:
-			result = fmt.Sprintf("(%s)", strings.Join(results, " "))
+			result = results.Join(" ").Format("(%s)")
 		}
 		return
 	}
 
 	if value, err := TryAsDictionary(value); err == nil {
-		results := make([]string, value.Count())
+		results := value.CreateList(value.Count())
 		vMap := value.AsMap()
 		switch level {
 		case 0:
-			for i, key := range value.KeysAsString() {
-				key := key.Str()
-				val := toBash(vMap[key], level+1)
-				if _, err := TryAsList(vMap[key]); err == nil {
-					results[i] = fmt.Sprintf("declare -a %[1]s\n%[1]s=%[2]v", key, val)
-				} else if _, err := TryAsDictionary(vMap[key]); err == nil {
-					results[i] = fmt.Sprintf("declare -A %[1]s\n%[1]s=%[2]v", key, val)
+			for i, key := range value.GetKeys() {
+				k := key.Str()
+				val := toBash(vMap[k], level+1)
+				if _, err := TryAsList(vMap[k]); err == nil {
+					results.Set(i, key.Format("declare -a %[1]s\n%[1]s=%[2]v", val))
+				} else if _, err := TryAsDictionary(vMap[k]); err == nil {
+					results.Set(i, key.Format("declare -A %[1]s\n%[1]s=%[2]v", val))
 				} else {
-					results[i] = fmt.Sprintf("%s=%v", key, val)
+					results.Set(i, key.Format("%s=%v", val))
 				}
 			}
-			result = strings.Join(results, "\n")
+			return results.Join("\n")
 		case 1:
-			for i, key := range value.KeysAsString() {
-				key := key.Str()
-				val := toBash(vMap[key], level+1)
-				val = strings.Replace(val, `$`, `\$`, -1)
-				results[i] = fmt.Sprintf("[%s]=%s", key, val)
+			for i, key := range value.GetKeys() {
+				val := toBash(vMap[key.Str()], level+1)
+				val = val.Replace(`$`, `\$`)
+				results.Set(i, key.Format("[%s]=%s", val))
 			}
-			result = fmt.Sprintf("(%s)", strings.Join(results, " "))
+			return results.Join(" ").Format("(%s)")
 		default:
-			for i, key := range value.KeysAsString() {
-				key := key.Str()
-				val := toBash(vMap[key], level+1)
-				results[i] = fmt.Sprintf("%s=%s", key, quote(val))
+			for i, key := range value.GetKeys() {
+				val := toBash(vMap[key.Str()], level+1)
+				results.Set(i, key.Format("%s=%s", quote(val)))
 			}
-			result = strings.Join(results, ",")
+			return results.Join(",")
 		}
-		return
 	}
-	return fmt.Sprint(value)
+	return AsString(value)
 }
 
 // ToNativeRepresentation converts any object to native (literals, maps, slices)
@@ -167,16 +167,16 @@ func ToNativeRepresentation(value interface{}) interface{} {
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32:
-		return must(strconv.Atoi(fmt.Sprint(value))).(int)
+		return Must(strconv.Atoi(AsStdString(value))).(int)
 
 	case reflect.Int64, reflect.Uint64:
-		return must(strconv.ParseInt(fmt.Sprint(value), 10, 64)).(int64)
+		return Must(strconv.ParseInt(AsStdString(value), 10, 64)).(int64)
 
 	case reflect.Float32, reflect.Float64:
-		return must(strconv.ParseFloat(fmt.Sprint(value), 64)).(float64)
+		return Must(strconv.ParseFloat(AsStdString(value), 64)).(float64)
 
 	case reflect.Bool:
-		return must(strconv.ParseBool(fmt.Sprint(value))).(bool)
+		return Must(strconv.ParseBool(AsStdString(value))).(bool)
 
 	case reflect.Slice, reflect.Array:
 		result := make([]interface{}, val.Len())
@@ -262,9 +262,10 @@ func IsExported(id string) bool {
 	return unicode.IsUpper(r)
 }
 
-func quote(s string) string {
-	if strings.ContainsAny(s, " \t,[]()") {
-		s = fmt.Sprintf("%q", s)
+func quote(i interface{}) String {
+	s := AsString(i)
+	if s.ContainsAny(" \t,[]()") {
+		s = String(fmt.Sprintf("%q", s))
 	}
 	return s
 }

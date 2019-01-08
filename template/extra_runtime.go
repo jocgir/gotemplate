@@ -52,19 +52,19 @@ var runtimeFuncsHelp = descriptions{
 	"allFunctions":  "Returns the list of all available functions.",
 	"assert":        "Raises a formated error if the test condition is false.",
 	"assertWarning": "Issues a formated warning if the test condition is false.",
-	"categories": strings.TrimSpace(collections.UnIndent(`
+	"categories": Strings(`
 		Returns all functions group by categories.
 
 		The returned value has the following properties:
 		    Name        string
 		    Functions    []string
-	`)),
+	`).UnIndent().TrimSpace(),
 	"current":  "Returns the current folder (like pwd, but returns the folder of the currently running folder).",
 	"ellipsis": "Returns the result of the function by expanding its last argument that must be an array into values. It's like calling function(arg1, arg2, otherArgs...).",
 	"exec":     "Returns the result of the shell command as structured data (as string if no other conversion is possible).",
 	"exit":     "Exits the current program execution.",
 	"func":     "Defines a function with the current context using the function (exec, run, include, template). Executed in the context of the caller.",
-	"function": strings.TrimSpace(collections.UnIndent(`
+	"function": String(`
 		Returns the information relative to a specific function.
 
 		The returned value has the following properties:
@@ -75,7 +75,7 @@ var runtimeFuncsHelp = descriptions{
 		    Aliases     []string
 		    Arguments   string
 		    Result      string
-	`)),
+	`).UnIndent().TrimSpace(),
 	"functions":     "Returns the list of all available functions (excluding aliases).",
 	"getAttributes": "List all attributes accessible from the supplied object.",
 	"getMethods":    "List all methods signatures accessible from the supplied object.",
@@ -124,13 +124,13 @@ func (t *Template) addRuntimeFuncs() {
 }
 
 func exit(exitValue int) int       { os.Exit(exitValue); return exitValue }
-func (t Template) current() string { return t.folder }
+func (t Template) current() String { return t.folder }
 
-func (t *Template) alias(name, function string, source interface{}, args ...interface{}) (string, error) {
+func (t *Template) alias(name, function IString, source interface{}, args ...interface{}) (interface{}, error) {
 	return t.addAlias(name, function, source, false, false, args...)
 }
 
-func (t *Template) localAlias(name, function string, source interface{}, args ...interface{}) (string, error) {
+func (t *Template) localAlias(name, function IString, source interface{}, args ...interface{}) (interface{}, error) {
 	return t.addAlias(name, function, source, true, false, args...)
 }
 
@@ -185,7 +185,7 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 		return
 	}
 
-	var config iDictionary
+	var config IDictionary
 
 	switch len(defaultArgs) {
 	case 0:
@@ -197,7 +197,7 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 		}
 		if reflect.TypeOf(defaultArgs[0]).Kind() == reflect.String {
 			var configFromString interface{}
-			if err = collections.ConvertData(fmt.Sprint(defaultArgs[0]), &configFromString); err != nil {
+			if err = collections.ConvertData(asStdString(defaultArgs[0]), &configFromString); err != nil {
 				err = fmt.Errorf("Function configuration must be valid type: %v\n%v", defaultArgs[0], err)
 				return
 			}
@@ -219,7 +219,7 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 			config.Set("group", val)
 		case "a", "args", "arguments":
 			switch val := val.(type) {
-			case iList:
+			case IGenericList:
 				config.Set("args", val)
 			default:
 				err = fmt.Errorf("%[1]s must be a list of strings: %[2]T %[2]v", key, val)
@@ -227,7 +227,7 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 			}
 		case "aliases":
 			switch val := val.(type) {
-			case iList:
+			case IGenericList:
 				config.Set("aliases", val)
 			default:
 				err = fmt.Errorf("%[1]s must be a list of strings: %[2]T %[2]v", key, val)
@@ -235,7 +235,7 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 			}
 		case "def", "default", "defaults":
 			switch val := val.(type) {
-			case iDictionary:
+			case IDictionary:
 				config.Set("def", val)
 			default:
 				err = fmt.Errorf("%s must be a dictionary: %T", key, val)
@@ -251,11 +251,11 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 		name:        name,
 		group:       defval(config.Get("group"), "User defined functions").(string),
 		description: defval(config.Get("description"), "").(string),
-		arguments:   defval(config.Get("args"), emptyList).(iList).Strings(),
-		aliases:     defval(config.Get("aliases"), emptyList).(iList).Strings(),
+		arguments:   defval(config.Get("args"), emptyList).(IGenericList).StdStrings(),
+		aliases:     defval(config.Get("aliases"), emptyList).(IGenericList).StdStrings(),
 	}
 
-	defaultValues := defval(config.Get("def"), collections.CreateDictionary()).(iDictionary)
+	defaultValues := defval(config.Get("def"), collections.CreateDictionary()).(IDictionary)
 
 	fi.in = fmt.Sprintf("%s", strings.Join(fi.arguments, ", "))
 	for i := range fi.arguments {
@@ -473,7 +473,7 @@ func getAttributes(object interface{}) string {
 		if !collections.IsExported(name) {
 			continue
 		}
-		typeName := color.HiBlackString(fmt.Sprint(t.Field(i).Type))
+		typeName := color.HiBlackString(asStdString(t.Field(i).Type))
 		attrName := color.HiGreenString(name)
 		result = append(result, fmt.Sprintf("%s %s", attrName, typeName))
 	}
@@ -505,11 +505,11 @@ func getSignature(object interface{}) string {
 	return attributes + methods
 }
 
-func raise(args ...interface{}) (string, error) {
-	return "", fmt.Errorf(utils.FormatMessage(args...))
+func raise(args ...interface{}) (String, error) {
+	return "", fmt.Errorf(FormatMessage(args...).String())
 }
 
-func assert(test interface{}, args ...interface{}) (string, error) {
+func assert(test interface{}, args ...interface{}) (String, error) {
 	if isZero(test) {
 		if len(args) == 0 {
 			args = []interface{}{"Assertion failed"}
@@ -519,12 +519,12 @@ func assert(test interface{}, args ...interface{}) (string, error) {
 	return "", nil
 }
 
-func assertWarning(test interface{}, args ...interface{}) string {
+func assertWarning(test interface{}, args ...interface{}) String {
 	if isZero(test) {
 		if len(args) == 0 {
 			args = []interface{}{"Assertion failed"}
 		}
-		Log.Warning(utils.FormatMessage(args...))
+		Log.Warning(FormatMessage(args...))
 	}
 	return ""
 }

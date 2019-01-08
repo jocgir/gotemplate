@@ -30,10 +30,12 @@ func (l jsonList) Has(values ...interface{}) bool    { return l.Contains(values.
 func (l jsonList) Last() interface{}                 { return jsonListHelper.GetIndexes(l, len(l)-1) }
 func (l jsonList) New(args ...interface{}) jsonIList { return jsonListHelper.NewList(args...) }
 func (l jsonList) Reverse() jsonIList                { return jsonListHelper.Reverse(l) }
-func (l jsonList) Strings() []string                 { return jsonListHelper.GetStrings(l) }
-func (l jsonList) StringArray() strArray             { return jsonListHelper.GetStringArray(l) }
-func (l jsonList) TypeName() str                     { return "Json" }
-func (l jsonList) Join(sep interface{}) str          { return l.StringArray().Join(sep) }
+func (l jsonList) Sorted() jsonIList                 { return jsonListHelper.Sorted(l) }
+func (l jsonList) Strings() StringArray              { return jsonListHelper.GetStrings(l) }
+func (l jsonList) StdStrings() []string              { return jsonListHelper.GetStdStrings(l) }
+func (l jsonList) TypeName() String                  { return "Json" }
+func (l jsonList) Join(sep IString) String           { return jsonListHelper.Join(l, sep) }
+func (l jsonList) JoinLines() String                 { return jsonListHelper.Join(l, "\n") }
 func (l jsonList) Unique() jsonIList                 { return jsonListHelper.Unique(l) }
 
 func (l jsonList) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
@@ -90,13 +92,12 @@ func (d jsonDict) CreateList(args ...int) jsonIList    { return jsonHelper.Creat
 func (d jsonDict) Flush(keys ...interface{}) jsonIDict { return jsonDictHelper.Flush(d, keys) }
 func (d jsonDict) Get(keys ...interface{}) interface{} { return jsonDictHelper.Get(d, keys) }
 func (d jsonDict) Has(keys ...interface{}) bool        { return jsonDictHelper.Has(d, keys) }
-func (d jsonDict) GetKeys() jsonIList                  { return jsonDictHelper.GetKeys(d) }
-func (d jsonDict) KeysAsString() strArray              { return jsonDictHelper.KeysAsString(d) }
+func (d jsonDict) GetKeys() StringArray                { return jsonDictHelper.GetKeys(d) }
 func (d jsonDict) Pop(keys ...interface{}) interface{} { return jsonDictHelper.Pop(d, keys) }
 func (d jsonDict) GetValues() jsonIList                { return jsonDictHelper.GetValues(d) }
 func (d jsonDict) Set(key, v interface{}) jsonIDict    { return jsonDictHelper.Set(d, key, v) }
 func (d jsonDict) Transpose() jsonIDict                { return jsonDictHelper.Transpose(d) }
-func (d jsonDict) TypeName() str                       { return "Json" }
+func (d jsonDict) TypeName() String                    { return "Json" }
 
 func (d jsonDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
 	return jsonDictHelper, jsonListHelper
@@ -130,14 +131,25 @@ var jsonListHelper = helperList{BaseHelper: jsonHelper}
 var jsonDictHelper = helperDict{BaseHelper: jsonHelper}
 
 // DictionaryHelper gives public access to the basic dictionary functions
-var DictionaryHelper collections.IDictionaryHelper = jsonDictHelper
+var DictionaryHelper = jsonDictHelper
 
 // GenericListHelper gives public access to the basic list functions
-var GenericListHelper collections.IListHelper = jsonListHelper
+var GenericListHelper = jsonListHelper
 
 type (
-	str      = collections.String
-	strArray = collections.StringArray
+	// String imported from collections
+	String = collections.String
+
+	// StringArray imported from collections
+	StringArray = collections.StringArray
+
+	// IString imported from collections
+	IString = collections.IString
 )
 
-var iif = collections.IIf
+// Vars imported from collections
+var (
+	IIf         = collections.IIf
+	AsString    = collections.AsString
+	AsStdString = collections.AsStdString
+)

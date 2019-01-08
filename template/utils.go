@@ -8,15 +8,29 @@ import (
 	"github.com/coveo/gotemplate/utils"
 )
 
-var must = errors.Must
-var trapError = errors.Trap
-var iif = collections.IIf
-var ifUndef = collections.IfUndef
-var defval = collections.Default
+// Imported from subpackages
+var (
+	AsList        = AsList
+	AsStdString   = collections.AsStdString
+	AsString      = collections.AsString
+	Default       = collections.Default
+	FormatMessage = collections.FormatMessage
+	IIf           = collections.IIf
+	IfUndef       = collections.IfUndef
+	Must          = errors.Must
+	Split2        = Split2
+	Trap          = errors.Trap
+)
 
 type (
-	iList       = collections.IGenericList
-	iDictionary = collections.IDictionary
+	// IGenericList imported from collections
+	IGenericList = IGenericList
+
+	// IDictionary imported from collections
+	IDictionary = collections.IDictionary
+
+	// String imported from collections
+	String = collections.String
 )
 
 func getTargetFile(targetFile, sourcePath, targetPath string) string {

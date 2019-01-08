@@ -5,16 +5,17 @@
 package hcl
 
 import (
-	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/coveo/gotemplate/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var strFixture = hclList(hclListHelper.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
+var (
+	strFixture = String("Hello World, I'm Foo Bar!").Split(" ")
+	strList    = hclListHelper.NewStringList
+)
 
 func Test_list_Append(t *testing.T) {
 	t.Parallel()
@@ -67,7 +68,7 @@ func Test_list_AsArray(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    hclList
+		l    hclIList
 		want []interface{}
 	}{
 		{"Empty List", hclList{}, []interface{}{}},
@@ -88,12 +89,12 @@ func Test_HclList_Strings(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    hclList
-		want []string
+		l    hclIList
+		want StringArray
 	}{
-		{"Empty List", hclList{}, []string{}},
-		{"List of int", hclList{1, 2, 3}, []string{"1", "2", "3"}},
-		{"List of string", strFixture, []string{"Hello", "World,", "I'm", "Foo", "Bar!"}},
+		{"Empty List", hclList{}, StringArray{}},
+		{"List of int", hclList{1, 2, 3}, StringArray{"1", "2", "3"}},
+		{"List of string", strFixture, StringArray{"Hello", "World,", "I'm", "Foo", "Bar!"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -128,7 +129,7 @@ func Test_list_Clone(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    hclList
+		l    hclIList
 		want hclIList
 	}{
 		{"Empty List", hclList{}, hclList{}},
@@ -149,7 +150,7 @@ func Test_list_Get(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		l       hclList
+		l       hclIList
 		indexes []int
 		want    interface{}
 	}{
@@ -176,7 +177,7 @@ func Test_list_Count(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    hclList
+		l    hclIList
 		want int
 	}{
 		{"Empty List", hclList{}, 0},
@@ -476,9 +477,8 @@ func Test_list_Unique(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		l    hclList
-		want hclList
+		name    string
+		l, want hclList
 	}{
 		{"Empty List", nil, hclList{}},
 		{"Remove nothing", hclList{1}, hclList{1}},
@@ -497,9 +497,8 @@ func Test_list_Reverse(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		l    hclList
-		want hclIList
+		name    string
+		l, want hclIList
 	}{
 		{"Empty List", hclList{}, hclList{}},
 		{"List of int", hclList{1, 2, 3}, hclList{3, 2, 1}},
@@ -797,32 +796,12 @@ func Test_dict_Keys(t *testing.T) {
 		want hclIList
 	}{
 		{"Empty", nil, hclList{}},
-		{"Map", dictFixture, hclList{str("float"), str("int"), str("list"), str("listInt"), str("map"), str("mapInt"), str("string")}},
+		{"Map", dictFixture, strList("float", "int", "list", "listInt", "map", "mapInt", "string")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.d.GetKeys(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("HclDict.GetKeys():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_dict_KeysAsString(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name string
-		d    hclDict
-		want strArray
-	}{
-		{"Empty", nil, strArray{}},
-		{"Map", dictFixture, strArray{"float", "int", "list", "listInt", "map", "mapInt", "string"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.d.KeysAsString(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("HclDict.KeysAsString():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
 			}
 		})
 	}
@@ -986,10 +965,10 @@ func Test_dict_Transpose(t *testing.T) {
 		want hclIDict
 	}{
 		{"Empty", nil, hclDict{}},
-		{"Base", hclDict{"A": 1}, hclDict{"1": str("A")}},
-		{"Multiple", hclDict{"A": 1, "B": 2, "C": 1}, hclDict{"1": hclList{str("A"), str("C")}, "2": str("B")}},
-		{"List", hclDict{"A": []int{1, 2, 3}, "B": 2, "C": 3}, hclDict{"1": str("A"), "2": hclList{str("A"), str("B")}, "3": hclList{str("A"), str("C")}}},
-		{"Complex", hclDict{"A": hclDict{"1": 1, "2": 2}, "B": 2, "C": 3}, hclDict{"2": str("B"), "3": str("C"), fmt.Sprint(hclDict{"1": 1, "2": 2}): str("A")}},
+		{"Base", hclDict{"A": 1}, hclDict{"1": String("A")}},
+		{"Multiple", hclDict{"A": 1, "B": 2, "C": 1}, hclDict{"1": strList("A", "C"), "2": String("B")}},
+		{"List", hclDict{"A": []int{1, 2, 3}, "B": 2, "C": 3}, hclDict{"1": String("A"), "2": strList("A", "B"), "3": strList("A", "C")}},
+		{"Complex", hclDict{"A": hclDict{"1": 1, "2": 2}, "B": 2, "C": 3}, hclDict{"2": String("B"), "3": String("C"), AsStdString(hclDict{"1": 1, "2": 2}): String("A")}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1025,7 +1004,7 @@ func Test_HclList_TypeName(t *testing.T) {
 	tests := []struct {
 		name string
 		l    hclList
-		want str
+		want String
 	}{
 		// TODO: Add test cases.
 	}
@@ -1039,8 +1018,8 @@ func Test_HclList_TypeName(t *testing.T) {
 }
 
 func Test_Hcl_TypeName(t *testing.T) {
-	t.Run("list", func(t *testing.T) { assert.Equal(t, hclList{}.TypeName(), str("Hcl")) })
-	t.Run("dict", func(t *testing.T) { assert.Equal(t, hclDict{}.TypeName(), str("Hcl")) })
+	t.Run("list", func(t *testing.T) { assert.Equal(t, hclList{}.TypeName(), String("Hcl")) })
+	t.Run("dict", func(t *testing.T) { assert.Equal(t, hclDict{}.TypeName(), String("Hcl")) })
 }
 
 func Test_Hcl_GetHelper(t *testing.T) {

@@ -10,7 +10,6 @@ import (
 	"github.com/coveo/gotemplate/collections"
 	"github.com/coveo/gotemplate/hcl"
 	"github.com/coveo/gotemplate/json"
-	"github.com/coveo/gotemplate/utils"
 	"github.com/coveo/gotemplate/xml"
 	"github.com/coveo/gotemplate/yaml"
 )
@@ -150,7 +149,7 @@ var dataFuncsAliases = aliases{
 	"toQuotedJson":  {"toQuotedJSON"},
 	"toXml":         {"toXML"},
 	"toYaml":        {"toYAML"},
-	"undef":         {"ifUndef"},
+	"undef":         {"IfUndef"},
 	"unique":        {"uniq"},
 	"unset":         {"delete", "remove"},
 	"xml":           {"XML", "fromXml", "fromXML"},
@@ -235,14 +234,14 @@ func (t *Template) addDataFuncs() {
 }
 
 func toChar(value interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return process(value, func(a interface{}) interface{} {
 		return string(toInt(a))
 	})
 }
 
-func toString(s interface{}) string            { return fmt.Sprint(s) }
-func toStringClass(s interface{}) utils.String { return utils.String(toString(s)) }
+func toString(s interface{}) string      { return asStdString(s) }
+func toStringClass(s interface{}) String { return String(toString(s)) }
 
 func toHCL(v interface{}) (string, error) {
 	output, err := hcl.Marshal(v)
@@ -381,7 +380,7 @@ func unset(arg1, arg2 interface{}) (string, error) {
 	return "", nil
 }
 
-func merge(target iDictionary, dict iDictionary, otherDicts ...iDictionary) iDictionary {
+func merge(target IDictionary, dict IDictionary, otherDicts ...IDictionary) IDictionary {
 	return target.Merge(dict, otherDicts...)
 }
 
@@ -423,7 +422,7 @@ func (t Template) templateConverter(to marshaler, from unMarshaler, source inter
 	}
 
 	var content string
-	if content, _, err = t.runTemplate(fmt.Sprint(source), context...); err == nil {
+	if content, _, err = t.runTemplate(asStdString(source), context...); err == nil {
 		result, err = t.converter(from, content, true, context...)
 	}
 	return
@@ -447,28 +446,28 @@ func (t Template) hclConverter(source interface{}, context ...interface{}) (resu
 
 func (t Template) dataConverter(source interface{}, context ...interface{}) (result interface{}, err error) {
 	return t.templateConverter(
-		func(in interface{}) ([]byte, error) { return []byte(fmt.Sprint(in)), nil },
+		func(in interface{}) ([]byte, error) { return []byte(asStdString(in)), nil },
 		func(bs []byte, out interface{}) error { return collections.ConvertData(string(bs), out) },
 		source, context...)
 }
 
-func pick(dict iDictionary, keys ...interface{}) iDictionary {
+func pick(dict IDictionary, keys ...interface{}) IDictionary {
 	return dict.Clone(keys...)
 }
 
-func omit(dict iDictionary, key interface{}, otherKeys ...interface{}) iDictionary {
+func omit(dict IDictionary, key interface{}, otherKeys ...interface{}) IDictionary {
 	return dict.Omit(key, otherKeys...)
 }
 
-func pickv(dict iDictionary, message string, key interface{}, otherKeys ...interface{}) (interface{}, error) {
+func pickv(dict IDictionary, message string, key interface{}, otherKeys ...interface{}) (interface{}, error) {
 	o := dict.Omit(key, otherKeys...)
 
 	if o.Count() > 0 {
-		over := strings.Join(toStrings(o.GetKeys()), ", ")
+		over := o.GetKeys().Join(", ")
 		if strings.Contains(message, "%v") {
 			message = fmt.Sprintf(message, over)
 		} else {
-			message = iif(message == "", "Unwanted values", message).(string)
+			message = IIf(message == "", "Unwanted values", message).(string)
 			message = fmt.Sprintf("%s %s", message, over)
 		}
 		return nil, fmt.Errorf(message)
@@ -476,10 +475,10 @@ func pickv(dict iDictionary, message string, key interface{}, otherKeys ...inter
 	return pick(dict, append(otherKeys, key)), nil
 }
 
-func keys(dict iDictionary) iList   { return dict.GetKeys() }
-func values(dict iDictionary) iList { return dict.GetValues() }
+func keys(dict IDictionary) IGenericList   { return dict.GetKeys() }
+func values(dict IDictionary) IGenericList { return dict.GetValues() }
 
-func createDict(v ...interface{}) (iDictionary, error) {
+func createDict(v ...interface{}) (IDictionary, error) {
 	if len(v)%2 != 0 {
 		return nil, fmt.Errorf("Must supply even number of arguments (keypair)")
 	}
@@ -491,7 +490,7 @@ func createDict(v ...interface{}) (iDictionary, error) {
 	return result, nil
 }
 
-func pluck(key interface{}, dicts ...iDictionary) iList {
+func pluck(key interface{}, dicts ...IDictionary) IGenericList {
 	result := collections.CreateList(0, len(dicts))
 	for i := range dicts {
 		if dicts[i].Has(key) {
@@ -504,62 +503,62 @@ func pluck(key interface{}, dicts ...iDictionary) iList {
 func rest(list interface{}) (interface{}, error)    { return slice(list, 1, -1) }
 func initial(list interface{}) (interface{}, error) { return slice(list, 0, -2) }
 
-func addElements(list interface{}, elements ...interface{}) (r iList, err error) {
-	defer func() { err = trapError(err, recover()) }()
-	return collections.AsList(list).Append(elements...), nil
+func addElements(list interface{}, elements ...interface{}) (r IGenericList, err error) {
+	defer func() { err = Trap(err, recover()) }()
+	return AsList(list).Append(elements...), nil
 }
 
-func prepend(list interface{}, elements ...interface{}) (r iList, err error) {
-	defer func() { err = trapError(err, recover()) }()
-	return collections.AsList(list).Prepend(elements...), nil
+func prepend(list interface{}, elements ...interface{}) (r IGenericList, err error) {
+	defer func() { err = Trap(err, recover()) }()
+	return AsList(list).Prepend(elements...), nil
 }
 
-func reverse(list interface{}) (r iList, err error) {
-	defer func() { err = trapError(err, recover()) }()
-	return collections.AsList(list).Reverse(), nil
+func reverse(list interface{}) (r IGenericList, err error) {
+	defer func() { err = Trap(err, recover()) }()
+	return AsList(list).Reverse(), nil
 }
 
-func unique(list interface{}) (r iList, err error) {
-	defer func() { err = trapError(err, recover()) }()
-	return collections.AsList(list).Unique(), nil
+func unique(list interface{}) (r IGenericList, err error) {
+	defer func() { err = Trap(err, recover()) }()
+	return AsList(list).Unique(), nil
 }
 
 func contains(list interface{}, elements ...interface{}) (r bool, err error) {
 	// Then, the list argument must be a real list of elements
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	if _, err := collections.TryAsList(list); err != nil && len(elements) == 1 {
 		if _, err2 := collections.TryAsList(elements[0]); err2 != nil {
 			str, subStr := elements[0], list
-			if s, isString := str.(collections.String); isString {
+			if s, isString := str.(String); isString {
 				// Check if the str argument is of type String
 				str = string(s)
 			}
 
 			if s, isString := str.(string); isString {
 				// Check if the list argument is of type string
-				return strings.Contains(s, fmt.Sprint(subStr)), nil
+				return strings.Contains(s, asStdString(subStr)), nil
 			}
 			return false, err
 		}
 		// Sprig has bad documentation and inverse the arguments, so we try to support both modes.
 		list, elements = elements[0], []interface{}{list}
 	}
-	return collections.AsList(list).Contains(elements...), nil
+	return AsList(list).Contains(elements...), nil
 }
 
-func intersect(list interface{}, elements ...interface{}) (r iList, err error) {
-	defer func() { err = trapError(err, recover()) }()
-	return collections.AsList(list).Intersect(elements...), nil
+func intersect(list interface{}, elements ...interface{}) (r IGenericList, err error) {
+	defer func() { err = Trap(err, recover()) }()
+	return AsList(list).Intersect(elements...), nil
 }
 
-func union(list interface{}, elements ...interface{}) (r iList, err error) {
-	defer func() { err = trapError(err, recover()) }()
-	return collections.AsList(list).Union(elements...), nil
+func union(list interface{}, elements ...interface{}) (r IGenericList, err error) {
+	defer func() { err = Trap(err, recover()) }()
+	return AsList(list).Union(elements...), nil
 }
 
-func without(list interface{}, elements ...interface{}) (r iList, err error) {
-	defer func() { err = trapError(err, recover()) }()
-	return collections.AsList(list).Without(elements...), nil
+func without(list interface{}, elements ...interface{}) (r IGenericList, err error) {
+	defer func() { err = Trap(err, recover()) }()
+	return AsList(list).Without(elements...), nil
 }
 
 func isZero(value interface{}) bool {

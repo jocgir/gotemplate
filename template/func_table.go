@@ -24,16 +24,16 @@ type FuncInfo struct {
 }
 
 // Aliases returns the aliases related to the entry.
-func (fi FuncInfo) Aliases() []string { return ifUndef(&fi, fi.alias).(*FuncInfo).aliases }
+func (fi FuncInfo) Aliases() []string { return IfUndef(&fi, fi.alias).(*FuncInfo).aliases }
 
 // Arguments returns the list of arguments that must be supplied to the function.
 func (fi FuncInfo) Arguments() string { return fi.getArguments(false) }
 
 // Description returns the description related to the entry.
-func (fi FuncInfo) Description() string { return ifUndef(&fi, fi.alias).(*FuncInfo).description }
+func (fi FuncInfo) Description() string { return IfUndef(&fi, fi.alias).(*FuncInfo).description }
 
 // Group returns the group name associated to the entry.
-func (fi FuncInfo) Group() string { return ifUndef(&fi, fi.alias).(*FuncInfo).group }
+func (fi FuncInfo) Group() string { return IfUndef(&fi, fi.alias).(*FuncInfo).group }
 
 // Name returns the name related to the entry.
 func (fi FuncInfo) Name() string { return fi.name }
@@ -83,8 +83,8 @@ func (fi FuncInfo) getArguments(isMethod bool) string {
 
 	signature := reflect.ValueOf(fi.function).Type()
 	var parameters []string
-	for i := iif(isMethod, 1, 0).(int); i < signature.NumIn(); i++ {
-		arg := strings.Replace(fmt.Sprint(signature.In(i)), "interface {}", "interface{}", -1)
+	for i := IIf(isMethod, 1, 0).(int); i < signature.NumIn(); i++ {
+		arg := strings.Replace(asStdString(signature.In(i)), "interface {}", "interface{}", -1)
 		arg = strings.Replace(arg, "collections.", "", -1)
 		var argName string
 		if i < len(fi.arguments) {
@@ -116,7 +116,7 @@ func (fi FuncInfo) Result() string {
 	signature := reflect.ValueOf(fi.function).Type()
 	var outputs []string
 	for i := 0; i < signature.NumOut(); i++ {
-		r := strings.Replace(fmt.Sprint(signature.Out(i)), "interface {}", "interface{}", -1)
+		r := strings.Replace(asStdString(signature.Out(i)), "interface {}", "interface{}", -1)
 		r = strings.Replace(r, "collections.", "", -1)
 		outputs = append(outputs, r)
 	}

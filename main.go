@@ -106,7 +106,7 @@ func main() {
 	options := make([]bool, template.OptionOnByDefaultCount)
 	for i := range options {
 		opt := template.Options(i)
-		optName := strings.ToLower(fmt.Sprint(opt))
+		optName := AsString(opt).ToLower().Str()
 		options[i] = true
 		app.Flag(optName, fmt.Sprintf("Option %v, on by default, --no-%s to disable", opt, optName)).BoolVar(&options[i])
 	}

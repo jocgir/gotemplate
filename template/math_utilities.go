@@ -10,32 +10,32 @@ import (
 
 func toInt(value interface{}) int {
 	// We convert to the string representation to ensure that any type is converted to int
-	return must(strconv.Atoi(fmt.Sprintf("%v", value))).(int)
+	return Must(strconv.Atoi(fmt.Sprintf("%v", value))).(int)
 }
 
 func toInt64(value interface{}) int64 {
 	// We convert to the string representation to ensure that any type is converted to int64
-	return must(strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)).(int64)
+	return Must(strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)).(int64)
 }
 
 func toUnsignedInteger(value interface{}) uint64 {
 	// We convert to the string representation to ensure that any type is converted to uint64
-	return must(strconv.ParseUint(fmt.Sprintf("%v", value), 10, 64)).(uint64)
+	return Must(strconv.ParseUint(fmt.Sprintf("%v", value), 10, 64)).(uint64)
 }
 
 func toFloat(value interface{}) float64 {
 	// We convert to the string representation to ensure that any type is converted to float64
-	return must(strconv.ParseFloat(fmt.Sprintf("%v", value), 64)).(float64)
+	return Must(strconv.ParseFloat(fmt.Sprintf("%v", value), 64)).(float64)
 }
 
-func toListOfFloats(values iList) (result iList, err error) {
+func toListOfFloats(values IGenericList) (result IGenericList, err error) {
 	if values == nil {
 		return collections.CreateList(), nil
 	}
 	values = convertArgs(nil, values.AsArray()...)
 	result = values.Clone()
 	defer func() {
-		if err = trapError(err, recover()); err != nil {
+		if err = Trap(err, recover()); err != nil {
 			result = nil
 		}
 	}()
@@ -45,7 +45,7 @@ func toListOfFloats(values iList) (result iList, err error) {
 	return
 }
 
-func asFloats(values iList) ([]float64, error) {
+func asFloats(values IGenericList) ([]float64, error) {
 	result, err := toListOfFloats(values)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func asFloats(values iList) ([]float64, error) {
 	return mustAsFloats(result), nil
 }
 
-func mustAsFloats(values iList) (result []float64) {
+func mustAsFloats(values IGenericList) (result []float64) {
 	result = make([]float64, values.Count())
 	for i := range result {
 		result[i] = values.Get(i).(float64)
@@ -62,7 +62,7 @@ func mustAsFloats(values iList) (result []float64) {
 }
 
 func process(arg, handler interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	arguments := convertArgs(arg)
 	if arguments.Count() == 0 {
 		return
@@ -107,7 +107,7 @@ func execute(arg, handler interface{}) interface{} {
 	}
 }
 
-func convertArgs(arg1 interface{}, args ...interface{}) (result collections.IGenericList) {
+func convertArgs(arg1 interface{}, args ...interface{}) (result IGenericList) {
 	if arg1 == nil {
 		// There is no first argument, so we isolate it from the other args
 		if len(args) == 0 {
@@ -117,7 +117,7 @@ func convertArgs(arg1 interface{}, args ...interface{}) (result collections.IGen
 	}
 	if len(args) == 0 {
 		// There is a single argument, we try to convert it into a list
-		return collections.AsList(arg1)
+		return AsList(arg1)
 	}
 
 	if list, err := collections.TryAsList(arg1); err == nil {
@@ -127,26 +127,26 @@ func convertArgs(arg1 interface{}, args ...interface{}) (result collections.IGen
 }
 
 func simplify(value float64) interface{} {
-	return iif(math.Floor(value) == value, int64(value), value)
+	return IIf(math.Floor(value) == value, int64(value), value)
 }
 
 func compareNumerics(values []interface{}, useMinFunc bool) interface{} {
 	if len(values) == 0 {
 		return nil
 	}
-	numerics, err := asFloats(collections.AsList(values))
+	numerics, err := asFloats(AsList(values))
 	if err != nil {
 		return compareStrings(values, useMinFunc)
 	}
 	result := numerics[0]
-	comp := iif(useMinFunc, math.Min, math.Max).(func(a, b float64) float64)
+	comp := IIf(useMinFunc, math.Min, math.Max).(func(a, b float64) float64)
 	for _, value := range numerics[1:] {
 		result = comp(result, value)
 	}
 	return simplify(result)
 }
 
-func compareStrings(values []interface{}, useMinFunc bool) (result string) {
+func compareStrings(values []interface{}, useMinFunc bool) (result String) {
 	sa := collections.ToStrings(values)
 	result = sa[0]
 	for _, value := range sa[1:] {
@@ -157,19 +157,19 @@ func compareStrings(values []interface{}, useMinFunc bool) (result string) {
 	return result
 }
 
-func generateNumericArray(limit bool, params ...interface{}) (result collections.IGenericList, err error) {
-	defer func() { err = trapError(err, recover()) }()
+func generateNumericArray(limit bool, params ...interface{}) (result IGenericList, err error) {
+	defer func() { err = Trap(err, recover()) }()
 
 	var start, stop float64
 	var step float64 = 1
 	var precision int
 	switch len(params) {
 	case 1:
-		start = float64(iif(limit, 1, 0).(int))
+		start = float64(IIf(limit, 1, 0).(int))
 		stop = toFloat(params[0])
 	case 3:
 		step = math.Abs(toFloat(params[2]))
-		_, frac := collections.Split2(fmt.Sprintf("%g", step), ".")
+		_, frac := Split2(fmt.Sprintf("%g", step), ".")
 		precision = len(frac)
 		fallthrough
 	case 2:
@@ -191,6 +191,6 @@ func generateNumericArray(limit bool, params ...interface{}) (result collections
 		array = append(array, simplify(current))
 		current += step
 	}
-	result = collections.AsList(array)
+	result = AsList(array)
 	return
 }

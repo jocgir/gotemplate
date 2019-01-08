@@ -2,7 +2,6 @@ package yaml
 
 import (
 	"bytes"
-	"fmt"
 	"reflect"
 
 	"github.com/coveo/gotemplate/collections"
@@ -65,13 +64,13 @@ func transformElement(source interface{}) interface{} {
 	case map[interface{}]interface{}:
 		result := make(map[string]interface{}, len(value))
 		for key, val := range value {
-			result[fmt.Sprint(key)] = val
+			result[AsStdString(key)] = val
 		}
 		source = result
 	}
 
 	if value, err := yamlHelper.TryAsDictionary(source); err == nil {
-		for _, key := range value.KeysAsString() {
+		for _, key := range value.GetKeys() {
 			value.Set(key, transformElement(value.Get(key)))
 		}
 		source = value

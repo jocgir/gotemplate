@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -15,10 +16,12 @@ import (
 	logging "github.com/op/go-logging"
 )
 
-// String is an alias to collections.String
-type String = collections.String
-
 var templateMutex sync.Mutex
+
+// Imported from text/template
+const (
+	NoValue = template.NoValue
+)
 
 // Template let us extend the functionalities of base go template library.
 type Template struct {
@@ -80,12 +83,16 @@ func IsCode(code string) bool {
 func NewTemplate(folder string, context interface{}, delimiters string, options OptionsSet, substitutes ...string) (result *Template, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
-			result, err = nil, fmt.Errorf("%v", rec)
+			var stack string
+			if String(os.Getenv(EnvDebug)).ParseBool() {
+				stack = "\n" + string(debug.Stack())
+			}
+			result, err = nil, fmt.Errorf("%v%s", rec, stack)
 		}
 	}()
 	t := Template{Template: template.New("Main")}
-	must(t.Parse(""))
-	t.options = iif(options != nil, options, DefaultOptions()).(OptionsSet)
+	Must(t.Parse(""))
+	t.options = IIf(options != nil, options, DefaultOptions()).(OptionsSet)
 	if acceptNoValue {
 		t.options[AcceptNoValue] = true
 	}
@@ -93,8 +100,8 @@ func NewTemplate(folder string, context interface{}, delimiters string, options 
 		t.options[StrictErrorCheck] = true
 	}
 	t.optionsEnabled = make(OptionsSet)
-	t.folder, _ = filepath.Abs(iif(folder != "", folder, utils.Pwd()).(string))
-	t.context = iif(context != nil, context, collections.CreateDictionary())
+	t.folder, _ = filepath.Abs(IIf(folder != "", folder, utils.Pwd()).(string))
+	t.context = IIf(context != nil, context, collections.CreateDictionary())
 	t.aliases = make(funcTableMap)
 	t.delimiters = []string{"{{", "}}", "@"}
 
@@ -127,12 +134,12 @@ func NewTemplate(folder string, context interface{}, delimiters string, options 
 // MustNewTemplate creates an Template object with default initialization.
 // It panics if an error occurs.
 func MustNewTemplate(folder string, context interface{}, delimiters string, options OptionsSet, substitutes ...string) *Template {
-	return must(NewTemplate(folder, context, delimiters, options, substitutes...)).(*Template)
+	return Must(NewTemplate(folder, context, delimiters, options, substitutes...)).(*Template)
 }
 
 // GetNewContext returns a distint context for each folder.
 func (t Template) GetNewContext(folder string, useCache bool) *Template {
-	folder = iif(folder != "", folder, t.folder).(string)
+	folder = IIf(folder != "", folder, t.folder).(string)
 	if context, found := t.children[folder]; useCache && found {
 		return context
 	}
@@ -214,7 +221,7 @@ func (t *Template) initExtension() {
 		// We just load all the template files available to ensure that all template definition are loaded
 		// We do not use ParseFiles because it names the template with the base name of the file
 		// which result in overriding templates with the same base name in different folders.
-		content := string(must(ioutil.ReadFile(file)).([]byte))
+		content := string(Must(ioutil.ReadFile(file)).([]byte))
 
 		// We execute the content, but we ignore errors. The goal is only to register the sub templates and aliases properly
 		// We also do not ask to clone the context as we wish to let extension to be able to alter the supplied context

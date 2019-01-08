@@ -3,11 +3,13 @@ package implementation
 import (
 	"fmt"
 	"reflect"
+	"sort"
+	"strings"
 
 	"github.com/coveo/gotemplate/collections"
 )
 
-func (l baseList) String() string { return fmt.Sprint(l.AsArray()) }
+func (l baseList) String() string { return AsStdString(l.AsArray()) }
 
 // ListHelper implements basic functionalities required for IGenericList.
 type ListHelper struct {
@@ -54,18 +56,19 @@ func (lh ListHelper) GetIndexes(list baseIList, indexes ...int) interface{} {
 	return result
 }
 
-// GetStrings returns a string array representation of the list.
-func (lh ListHelper) GetStrings(list baseIList) []string {
+// GetStrings returns a String array representation of the list.
+func (lh ListHelper) GetStrings(list baseIList) StringArray {
 	return collections.ToStrings(list.AsArray())
 }
 
-// GetStringArray returns a StringArray representation of the list.
-func (lh ListHelper) GetStringArray(list baseIList) strArray {
-	result := make(strArray, list.Count())
-	for i := 0; i < list.Count(); i++ {
-		result[i] = str(fmt.Sprint(list.Get(i)))
-	}
-	return result
+// GetStdStrings returns a string array representation of the list.
+func (lh ListHelper) GetStdStrings(list baseIList) []string {
+	return collections.ToStdStrings(list.AsArray())
+}
+
+// Join returns a string by concatenating all elements of the list.
+func (lh ListHelper) Join(list baseIList, sep IString) String {
+	return String(strings.Join(list.StdStrings(), AsStdString(sep)))
 }
 
 // NewList creates a new IGenericList from supplied arguments.
@@ -92,7 +95,7 @@ func (bh BaseHelper) NewList(items ...interface{}) baseIList {
 func (bh BaseHelper) NewStringList(items ...string) baseIList {
 	newList := bh.CreateList(0, len(items))
 	for i := range items {
-		newList = newList.Append(items[i])
+		newList = newList.Append(String(items[i]))
 	}
 	return newList
 }
@@ -119,11 +122,12 @@ func (lh ListHelper) SetIndex(list baseIList, index int, value interface{}) (bas
 	return list, nil
 }
 
-// Register the implementation of list functions
-var _ = func() int {
-	collections.ListHelper = baseListHelper
-	return 0
-}()
+// Sorted returns a copy of the current list with element sorted.
+func (lh ListHelper) Sorted(list baseIList) baseIList {
+	source := list.StdStrings()
+	sort.Strings(source)
+	return lh.NewStringList(source...)
+}
 
 // Unique returns a copy of the list removing all duplicate elements.
 func (lh ListHelper) Unique(list baseIList) baseIList {
@@ -140,7 +144,7 @@ func (lh ListHelper) Unique(list baseIList) baseIList {
 // Intersect returns a new list that is the result of the intersection of the list and the parameters.
 func (lh ListHelper) Intersect(list baseIList, values ...interface{}) baseIList {
 	source := list.Unique().AsArray()
-	include := collections.AsList(values)
+	include := lh.AsList(values)
 	target := lh.CreateList(0, include.Count())
 	for i := range source {
 		if include.Contains(source[i]) {
@@ -157,7 +161,7 @@ func (lh ListHelper) Remove(list baseIList, indexes ...int) baseIList {
 			indexes[i] += list.Count()
 		}
 	}
-	discard := collections.AsList(indexes)
+	discard := lh.AsList(indexes)
 	target := list.Create(0, list.Count())
 	for i := range list.AsArray() {
 		if !discard.Contains(i) {
@@ -170,7 +174,7 @@ func (lh ListHelper) Remove(list baseIList, indexes ...int) baseIList {
 // Without returns a copy of the list removing specified elements.
 func (lh ListHelper) Without(list baseIList, values ...interface{}) baseIList {
 	source := list.AsArray()
-	exclude := collections.AsList(values)
+	exclude := lh.AsList(values)
 	target := lh.CreateList(0, list.Count())
 	for i := range source {
 		if !exclude.Contains(source[i]) {
@@ -186,7 +190,7 @@ func (lh ListHelper) Contains(list baseIList, values ...interface{}) bool {
 	for _, value := range values {
 		match := false
 		for _, item := range source {
-			if fmt.Sprint(value) == fmt.Sprint(item) {
+			if AsStdString(value) == AsStdString(item) {
 				match = true
 				break
 			}

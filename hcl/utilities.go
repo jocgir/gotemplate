@@ -51,7 +51,7 @@ func transform(out interface{}) {
 
 func transformElement(source interface{}) interface{} {
 	if value, err := hclHelper.TryAsDictionary(source); err == nil {
-		for _, key := range value.KeysAsString() {
+		for _, key := range value.GetKeys() {
 			value.Set(key, transformElement(value.Get(key)))
 		}
 		source = value
@@ -75,21 +75,21 @@ func marshalHCL(value interface{}, fullHcl, head bool, prefix, indent string) (r
 
 	switch value := value.(type) {
 	case int, int64, float64, bool:
-		result = fmt.Sprint(value)
+		result = AsStdString(value)
 	case string:
-		value = fmt.Sprintf("%q", value)
-		if indent != "" && strings.Contains(value, "\\n") {
+		value := String(value).Quote()
+		if indent != "" && value.Contains("\\n") {
 			// We unquote the value
 			unIndented := value[1 : len(value)-1]
 			// Then replace escaped characters, other escape chars are \a, \b, \f and \v are not managed
-			unIndented = strings.Replace(unIndented, `\n`, "\n", -1)
-			unIndented = strings.Replace(unIndented, `\\`, "\\", -1)
-			unIndented = strings.Replace(unIndented, `\"`, "\"", -1)
-			unIndented = strings.Replace(unIndented, `\r`, "\r", -1)
-			unIndented = strings.Replace(unIndented, `\t`, "\t", -1)
-			unIndented = collections.UnIndent(unIndented)
-			if strings.HasSuffix(unIndented, "\n") {
-				value = fmt.Sprintf("<<-EOF\n%sEOF", unIndented)
+			unIndented = unIndented.Replace(`\n`, "\n")
+			unIndented = unIndented.Replace(`\\`, "\\")
+			unIndented = unIndented.Replace(`\"`, "\"")
+			unIndented = unIndented.Replace(`\r`, "\r")
+			unIndented = unIndented.Replace(`\t`, "\t")
+			unIndented = unIndented.UnIndent()
+			if unIndented.HasSuffix("\n") {
+				value = unIndented.Format("<<-EOF\n%sEOF")
 			}
 		}
 		result = value

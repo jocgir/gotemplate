@@ -14,7 +14,7 @@ func add(a interface{}, args ...interface{}) (r interface{}, err error) {
 	if a == nil {
 		return
 	}
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	arguments := convertArgs(a, args...)
 	args = arguments.AsArray()
 
@@ -23,7 +23,7 @@ func add(a interface{}, args ...interface{}) (r interface{}, err error) {
 		if len(args) == 2 {
 			// If the first argument is an array of float, we process it with the generic processor function
 			if af, err := toListOfFloats(convertArgs(args[0])); err == nil {
-				if _, err := strconv.ParseFloat(fmt.Sprint(args[1]), 64); err == nil {
+				if _, err := strconv.ParseFloat(asStdString(args[1]), 64); err == nil {
 					return processFloat2(af, args[1], func(a, b float64) float64 {
 						return a + b
 					})
@@ -60,7 +60,7 @@ func multiply(a interface{}, args ...interface{}) (r interface{}, err error) {
 	if a == nil && len(args) < 2 {
 		return
 	}
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	arguments := convertArgs(a, args...)
 	args = arguments.AsArray()
 
@@ -113,12 +113,12 @@ func multiply(a interface{}, args ...interface{}) (r interface{}, err error) {
 }
 
 func subtract(a, b interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat2(a, b, func(a, b float64) float64 { return a - b })
 }
 
 func divide(a, b interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat2(a, b, func(a, b float64) float64 {
 		if b == 0 {
 			panic(fmt.Errorf("Division by 0"))
@@ -128,22 +128,22 @@ func divide(a, b interface{}) (r interface{}, err error) {
 }
 
 func modulo(a, b interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat2(a, b, math.Mod)
 }
 
 func modf(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return process(a, math.Modf)
 }
 
 func power(a, b interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat2(a, b, math.Pow)
 }
 
 func power10(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, func(a float64) float64 {
 		return math.Pow10(int(a))
 	})

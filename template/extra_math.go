@@ -334,24 +334,24 @@ func to(params ...interface{}) (interface{}, error)    { return generateNumericA
 func until(params ...interface{}) (interface{}, error) { return generateNumericArray(false, params...) }
 
 func abs(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Abs)
 }
 
 func cbrt(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Cbrt)
 }
 
 func ceil(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Ceil)
 }
 
 // math.Copysign
 
 func dim(a, b interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat2(a, b, math.Dim)
 }
 
@@ -359,113 +359,113 @@ func dim(a, b interface{}) (r interface{}, err error) {
 // math.Erfc
 
 func exp(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Exp)
 }
 
 func exp2(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Exp2)
 }
 
 func expm1(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Expm1)
 }
 
 func floor(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Floor)
 }
 
 func frexp(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	f, e := math.Frexp(toFloat(a))
 	return []interface{}{simplify(f), e}, nil
 }
 
 func gamma(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Gamma)
 }
 
 func infinity(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return simplify(math.Inf(toInt(a))), nil
 }
 
 func isInfinity(a, b interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return math.IsInf(toFloat(a), toInt(b)), nil
 }
 
 func isNaN(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return math.IsNaN(toFloat(a)), nil
 }
 
 func j0(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.J0)
 }
 
 func j1(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.J1)
 }
 
 func jn(n, x interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return math.Jn(toInt(n), toFloat(x)), nil
 }
 
 func ldexp(a, b interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return simplify(math.Ldexp(toFloat(a), toInt(b))), nil
 }
 
 func lgamma(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	f, e := math.Lgamma(toFloat(a))
 	return []interface{}{simplify(f), e}, nil
 }
 
 func nextAfter(a, b interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return simplify(math.Nextafter(toFloat(a), toFloat(b))), nil
 }
 
 func remainder(a, b interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return simplify(math.Remainder(toFloat(a), toFloat(b))), nil
 }
 
 func signBit(a, b interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return math.Signbit(toFloat(a)), nil
 }
 
 func sqrt(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Sqrt)
 }
 
 func trunc(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Trunc)
 }
 
 func y0(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Y0)
 }
 
 func y1(a interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return processFloat(a, math.Y1)
 }
 
 func yn(n, x interface{}) (r interface{}, err error) {
-	defer func() { err = trapError(err, recover()) }()
+	defer func() { err = Trap(err, recover()) }()
 	return math.Yn(toInt(n), toFloat(x)), nil
 }

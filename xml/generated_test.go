@@ -5,16 +5,17 @@
 package xml
 
 import (
-	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/coveo/gotemplate/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var strFixture = xmlList(xmlListHelper.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
+var (
+	strFixture = String("Hello World, I'm Foo Bar!").Split(" ")
+	strList    = xmlListHelper.NewStringList
+)
 
 func Test_list_Append(t *testing.T) {
 	t.Parallel()
@@ -67,7 +68,7 @@ func Test_list_AsArray(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    xmlList
+		l    xmlIList
 		want []interface{}
 	}{
 		{"Empty List", xmlList{}, []interface{}{}},
@@ -88,12 +89,12 @@ func Test_XmlList_Strings(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    xmlList
-		want []string
+		l    xmlIList
+		want StringArray
 	}{
-		{"Empty List", xmlList{}, []string{}},
-		{"List of int", xmlList{1, 2, 3}, []string{"1", "2", "3"}},
-		{"List of string", strFixture, []string{"Hello", "World,", "I'm", "Foo", "Bar!"}},
+		{"Empty List", xmlList{}, StringArray{}},
+		{"List of int", xmlList{1, 2, 3}, StringArray{"1", "2", "3"}},
+		{"List of string", strFixture, StringArray{"Hello", "World,", "I'm", "Foo", "Bar!"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -128,7 +129,7 @@ func Test_list_Clone(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    xmlList
+		l    xmlIList
 		want xmlIList
 	}{
 		{"Empty List", xmlList{}, xmlList{}},
@@ -149,7 +150,7 @@ func Test_list_Get(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		l       xmlList
+		l       xmlIList
 		indexes []int
 		want    interface{}
 	}{
@@ -176,7 +177,7 @@ func Test_list_Count(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    xmlList
+		l    xmlIList
 		want int
 	}{
 		{"Empty List", xmlList{}, 0},
@@ -476,9 +477,8 @@ func Test_list_Unique(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		l    xmlList
-		want xmlList
+		name    string
+		l, want xmlList
 	}{
 		{"Empty List", nil, xmlList{}},
 		{"Remove nothing", xmlList{1}, xmlList{1}},
@@ -497,9 +497,8 @@ func Test_list_Reverse(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		l    xmlList
-		want xmlIList
+		name    string
+		l, want xmlIList
 	}{
 		{"Empty List", xmlList{}, xmlList{}},
 		{"List of int", xmlList{1, 2, 3}, xmlList{3, 2, 1}},
@@ -797,32 +796,12 @@ func Test_dict_Keys(t *testing.T) {
 		want xmlIList
 	}{
 		{"Empty", nil, xmlList{}},
-		{"Map", dictFixture, xmlList{str("float"), str("int"), str("list"), str("listInt"), str("map"), str("mapInt"), str("string")}},
+		{"Map", dictFixture, strList("float", "int", "list", "listInt", "map", "mapInt", "string")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.d.GetKeys(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("XmlDict.GetKeys():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_dict_KeysAsString(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name string
-		d    xmlDict
-		want strArray
-	}{
-		{"Empty", nil, strArray{}},
-		{"Map", dictFixture, strArray{"float", "int", "list", "listInt", "map", "mapInt", "string"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.d.KeysAsString(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("XmlDict.KeysAsString():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
 			}
 		})
 	}
@@ -986,10 +965,10 @@ func Test_dict_Transpose(t *testing.T) {
 		want xmlIDict
 	}{
 		{"Empty", nil, xmlDict{}},
-		{"Base", xmlDict{"A": 1}, xmlDict{"1": str("A")}},
-		{"Multiple", xmlDict{"A": 1, "B": 2, "C": 1}, xmlDict{"1": xmlList{str("A"), str("C")}, "2": str("B")}},
-		{"List", xmlDict{"A": []int{1, 2, 3}, "B": 2, "C": 3}, xmlDict{"1": str("A"), "2": xmlList{str("A"), str("B")}, "3": xmlList{str("A"), str("C")}}},
-		{"Complex", xmlDict{"A": xmlDict{"1": 1, "2": 2}, "B": 2, "C": 3}, xmlDict{"2": str("B"), "3": str("C"), fmt.Sprint(xmlDict{"1": 1, "2": 2}): str("A")}},
+		{"Base", xmlDict{"A": 1}, xmlDict{"1": String("A")}},
+		{"Multiple", xmlDict{"A": 1, "B": 2, "C": 1}, xmlDict{"1": strList("A", "C"), "2": String("B")}},
+		{"List", xmlDict{"A": []int{1, 2, 3}, "B": 2, "C": 3}, xmlDict{"1": String("A"), "2": strList("A", "B"), "3": strList("A", "C")}},
+		{"Complex", xmlDict{"A": xmlDict{"1": 1, "2": 2}, "B": 2, "C": 3}, xmlDict{"2": String("B"), "3": String("C"), AsStdString(xmlDict{"1": 1, "2": 2}): String("A")}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1025,7 +1004,7 @@ func Test_XmlList_TypeName(t *testing.T) {
 	tests := []struct {
 		name string
 		l    xmlList
-		want str
+		want String
 	}{
 		// TODO: Add test cases.
 	}
@@ -1039,8 +1018,8 @@ func Test_XmlList_TypeName(t *testing.T) {
 }
 
 func Test_Xml_TypeName(t *testing.T) {
-	t.Run("list", func(t *testing.T) { assert.Equal(t, xmlList{}.TypeName(), str("Xml")) })
-	t.Run("dict", func(t *testing.T) { assert.Equal(t, xmlDict{}.TypeName(), str("Xml")) })
+	t.Run("list", func(t *testing.T) { assert.Equal(t, xmlList{}.TypeName(), String("Xml")) })
+	t.Run("dict", func(t *testing.T) { assert.Equal(t, xmlDict{}.TypeName(), String("Xml")) })
 }
 
 func Test_Xml_GetHelper(t *testing.T) {

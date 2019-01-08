@@ -30,10 +30,12 @@ func (l hclList) Has(values ...interface{}) bool   { return l.Contains(values...
 func (l hclList) Last() interface{}                { return hclListHelper.GetIndexes(l, len(l)-1) }
 func (l hclList) New(args ...interface{}) hclIList { return hclListHelper.NewList(args...) }
 func (l hclList) Reverse() hclIList                { return hclListHelper.Reverse(l) }
-func (l hclList) Strings() []string                { return hclListHelper.GetStrings(l) }
-func (l hclList) StringArray() strArray            { return hclListHelper.GetStringArray(l) }
-func (l hclList) TypeName() str                    { return "Hcl" }
-func (l hclList) Join(sep interface{}) str         { return l.StringArray().Join(sep) }
+func (l hclList) Sorted() hclIList                 { return hclListHelper.Sorted(l) }
+func (l hclList) Strings() StringArray             { return hclListHelper.GetStrings(l) }
+func (l hclList) StdStrings() []string             { return hclListHelper.GetStdStrings(l) }
+func (l hclList) TypeName() String                 { return "Hcl" }
+func (l hclList) Join(sep IString) String          { return hclListHelper.Join(l, sep) }
+func (l hclList) JoinLines() String                { return hclListHelper.Join(l, "\n") }
 func (l hclList) Unique() hclIList                 { return hclListHelper.Unique(l) }
 
 func (l hclList) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
@@ -90,13 +92,12 @@ func (d hclDict) CreateList(args ...int) hclIList     { return hclHelper.CreateL
 func (d hclDict) Flush(keys ...interface{}) hclIDict  { return hclDictHelper.Flush(d, keys) }
 func (d hclDict) Get(keys ...interface{}) interface{} { return hclDictHelper.Get(d, keys) }
 func (d hclDict) Has(keys ...interface{}) bool        { return hclDictHelper.Has(d, keys) }
-func (d hclDict) GetKeys() hclIList                   { return hclDictHelper.GetKeys(d) }
-func (d hclDict) KeysAsString() strArray              { return hclDictHelper.KeysAsString(d) }
+func (d hclDict) GetKeys() StringArray                { return hclDictHelper.GetKeys(d) }
 func (d hclDict) Pop(keys ...interface{}) interface{} { return hclDictHelper.Pop(d, keys) }
 func (d hclDict) GetValues() hclIList                 { return hclDictHelper.GetValues(d) }
 func (d hclDict) Set(key, v interface{}) hclIDict     { return hclDictHelper.Set(d, key, v) }
 func (d hclDict) Transpose() hclIDict                 { return hclDictHelper.Transpose(d) }
-func (d hclDict) TypeName() str                       { return "Hcl" }
+func (d hclDict) TypeName() String                    { return "Hcl" }
 
 func (d hclDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
 	return hclDictHelper, hclListHelper
@@ -130,14 +131,25 @@ var hclListHelper = helperList{BaseHelper: hclHelper}
 var hclDictHelper = helperDict{BaseHelper: hclHelper}
 
 // DictionaryHelper gives public access to the basic dictionary functions
-var DictionaryHelper collections.IDictionaryHelper = hclDictHelper
+var DictionaryHelper = hclDictHelper
 
 // GenericListHelper gives public access to the basic list functions
-var GenericListHelper collections.IListHelper = hclListHelper
+var GenericListHelper = hclListHelper
 
 type (
-	str      = collections.String
-	strArray = collections.StringArray
+	// String imported from collections
+	String = collections.String
+
+	// StringArray imported from collections
+	StringArray = collections.StringArray
+
+	// IString imported from collections
+	IString = collections.IString
 )
 
-var iif = collections.IIf
+// Vars imported from collections
+var (
+	IIf         = collections.IIf
+	AsString    = collections.AsString
+	AsStdString = collections.AsStdString
+)

@@ -98,18 +98,18 @@ func MustFindFilesMaxDepth(folder string, maxDepth int, followLinks bool, patter
 	return must(FindFilesMaxDepth(folder, maxDepth, followLinks, patterns...)).([]string)
 }
 
-func globFunc(trimUnmatch bool, args ...interface{}) (result []string) {
+func globFunc(trimUnmatched bool, args ...interface{}) (result []string) {
 	for _, arg := range collections.ToStrings(args) {
-		if strings.ContainsAny(arg, "*?[]") {
-			if expanded, _ := filepath.Glob(arg); expanded != nil {
+		if arg.ContainsAny("*?[]") {
+			if expanded, _ := filepath.Glob(arg.String()); expanded != nil {
 				result = append(result, expanded...)
 				continue
 			}
-			if trimUnmatch {
+			if trimUnmatched {
 				continue
 			}
 		}
-		result = append(result, arg)
+		result = append(result, arg.String())
 	}
 	return
 }

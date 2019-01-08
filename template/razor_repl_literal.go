@@ -9,7 +9,7 @@ import (
 func protectMultiLineStrings(repl replacement, match string) string {
 	if strings.HasPrefix(match[1:], protectString) {
 		// We restore back the long string
-		index := must(strconv.Atoi(repl.re.FindStringSubmatch(match)[1])).(int)
+		index := Must(strconv.Atoi(repl.re.FindStringSubmatch(match)[1])).(int)
 		restore := longStrings[index]
 		longStrings[index] = ""
 		return restore

@@ -21,7 +21,7 @@ func Test_convertArgs(t *testing.T) {
 		name string
 		arg1 interface{}
 		args a
-		want iList
+		want IGenericList
 	}{
 		{"Nil", nil, nil, l{}},
 		{"Single int", 5, nil, l{5}},
@@ -51,8 +51,8 @@ func Test_toListOfFloats(t *testing.T) {
 	collections.ListHelper = implementation.GenericListHelper
 	tests := []struct {
 		name       string
-		values     iList
-		wantResult iList
+		values     IGenericList
+		wantResult IGenericList
 		wantErr    bool
 	}{
 		{"Nil", nil, l{}, false},
@@ -84,7 +84,7 @@ func Test_asFloats(t *testing.T) {
 	type j = json.List
 	tests := []struct {
 		name       string
-		values     iList
+		values     IGenericList
 		wantResult []float64
 		wantErr    bool
 	}{

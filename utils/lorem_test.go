@@ -7,7 +7,7 @@ import (
 func TestLorem(t *testing.T) {
 	tests := []struct {
 		name    string
-		want    string
+		want    String
 		wantErr bool
 	}{
 		// WARNING: If you add tests, you must add them after those that are already there, otherwise, all results will be changed.

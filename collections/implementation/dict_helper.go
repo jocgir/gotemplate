@@ -4,14 +4,16 @@ import (
 	"fmt"
 
 	"github.com/coveo/gotemplate/collections"
+
 	"github.com/imdario/mergo"
 )
 
 func (d baseDict) String() string {
 	// Unlike go maps, we render dictionary keys in order
-	keys := d.KeysAsString()
-	for i, k := range keys {
-		keys[i] = str(fmt.Sprintf("%s:%v", k, d.Get(k)))
+	keys := d.GetKeys()
+	for i, k := range keys.AsArray() {
+		k := k.(String)
+		keys.Set(i, k.Format("%s:%v", d.Get(k)))
 	}
 	return fmt.Sprintf("dict[%s]", keys.Join(" "))
 }
@@ -19,11 +21,6 @@ func (d baseDict) String() string {
 // DictHelper implements basic functionalities required for IDictionary.
 type DictHelper struct {
 	BaseHelper
-}
-
-// AsDictionary returns the object casted as IDictionary.
-func (dh DictHelper) AsDictionary(object interface{}) baseIDict {
-	return must(dh.TryAsDictionary(object)).(baseIDict)
 }
 
 // Clone returns a distinct copy of the object with only supplied keys. If no keys are supplied, all keys from d are copied.
@@ -74,7 +71,7 @@ func (dh DictHelper) Get(dict baseIDict, keys []interface{}) interface{} {
 	case 0:
 		return nil
 	case 1:
-		return dict.AsMap()[fmt.Sprint(keys[0])]
+		return dict.AsMap()[AsStdString(keys[0])]
 	}
 	result := dict.CreateList(len(keys))
 	for i := range result.AsArray() {
@@ -86,7 +83,7 @@ func (dh DictHelper) Get(dict baseIDict, keys []interface{}) interface{} {
 // Has returns true if the dictionary object contains all the keys.
 func (dh DictHelper) Has(dict baseIDict, keys []interface{}) bool {
 	for _, key := range keys {
-		if _, ok := dict.AsMap()[fmt.Sprint(key)]; !ok {
+		if _, ok := dict.AsMap()[AsStdString(key)]; !ok {
 			return false
 		}
 	}
@@ -94,23 +91,12 @@ func (dh DictHelper) Has(dict baseIDict, keys []interface{}) bool {
 }
 
 // GetKeys returns the keys in the dictionary in alphabetical order.
-func (dh DictHelper) GetKeys(dict baseIDict) baseIList {
-	keys := dict.KeysAsString()
-	result := dh.CreateList(dict.Count())
-
-	for i := range keys {
-		result.Set(i, keys[i])
+func (dh DictHelper) GetKeys(dict baseIDict) StringArray {
+	keys := make([]string, 0, dict.Count())
+	for k := range dict.AsMap() {
+		keys = append(keys, k)
 	}
-	return result
-}
-
-// KeysAsString returns the keys in the dictionary in alphabetical order.
-func (dh DictHelper) KeysAsString(dict baseIDict) collections.StringArray {
-	keys := make(collections.StringArray, 0, dict.Count())
-	for key := range dict.AsMap() {
-		keys = append(keys, str(key))
-	}
-	return keys.Sorted()
+	return dh.NewStringList(keys...).Sorted().Strings()
 }
 
 // Merge merges the other dictionaries into the current dictionary.
@@ -120,7 +106,7 @@ func (dh DictHelper) Merge(target baseIDict, sources []baseIDict) baseIDict {
 		if sources[i] == nil {
 			continue
 		}
-		must(mergo.Merge(&m, dh.ConvertDict(sources[i]).AsMap()))
+		collections.Must(mergo.Merge(&m, dh.ConvertDict(sources[i]).AsMap()))
 	}
 	return target
 }
@@ -129,7 +115,7 @@ func (dh DictHelper) Merge(target baseIDict, sources []baseIDict) baseIDict {
 func (dh DictHelper) Omit(dict baseIDict, keys []interface{}) baseIDict {
 	omitKeys := make(map[string]bool, len(keys))
 	for i := range keys {
-		omitKeys[fmt.Sprint(keys[i])] = true
+		omitKeys[AsStdString(keys[i])] = true
 	}
 	keep := make([]interface{}, 0, dict.Count())
 	for key := range dict.AsMap() {
@@ -155,7 +141,7 @@ func (dh DictHelper) Set(dict baseIDict, key interface{}, value interface{}) bas
 	if dict.AsMap() == nil {
 		dict = dh.CreateDictionary()
 	}
-	dict.AsMap()[fmt.Sprint(key)] = dh.Convert(value)
+	dict.AsMap()[AsStdString(key)] = dh.Convert(value)
 	return dict
 }
 
@@ -165,10 +151,10 @@ func (dh DictHelper) Add(dict baseIDict, key interface{}, value interface{}) bas
 		dict = dh.CreateDictionary()
 	}
 	m := dict.AsMap()
-	k := fmt.Sprint(key)
+	k := AsStdString(key)
 
 	if current, ok := m[k]; ok {
-		if list, err := collections.TryAsList(current); err == nil {
+		if list, err := dh.TryAsList(current); err == nil {
 			m[k] = list.Append(value)
 		} else {
 			// Convert the current value into a list
@@ -183,7 +169,7 @@ func (dh DictHelper) Add(dict baseIDict, key interface{}, value interface{}) bas
 // GetValues returns the values in the dictionary in key alphabetical order.
 func (dh DictHelper) GetValues(dict baseIDict) baseIList {
 	result := dh.CreateList(dict.Count())
-	for i, key := range dict.KeysAsString() {
+	for i, key := range dict.GetKeys() {
 		result.Set(i, dict.Get(key))
 	}
 	return result
@@ -193,9 +179,9 @@ func (dh DictHelper) GetValues(dict baseIDict) baseIList {
 // is a dictionary where each key could contains single value or list of values if there are multiple matches.
 func (dh DictHelper) Transpose(dict baseIDict) baseIDict {
 	result := dh.CreateDictionary()
-	for _, key := range dict.GetKeys().AsArray() {
+	for _, key := range dict.GetKeys() {
 		value := dict.Get(key)
-		if list, err := collections.TryAsList(value); err == nil {
+		if list, err := dh.TryAsList(value); err == nil {
 			// If the element is a list, we scan each element
 			for _, value := range list.AsArray() {
 				result.Add(value, key)
@@ -212,13 +198,7 @@ func (dh DictHelper) delete(dict baseIDict, keys []interface{}, mustExist bool) 
 		if mustExist && !dict.Has(keys[i]) {
 			return dict, fmt.Errorf("key %v not found", keys[i])
 		}
-		delete(dict.AsMap(), fmt.Sprint(keys[i]))
+		delete(dict.AsMap(), AsStdString(keys[i]))
 	}
 	return dict, nil
 }
-
-// Register the default implementation of dictionary helper
-var _ = func() int {
-	collections.DictionaryHelper = baseDictHelper
-	return 0
-}()

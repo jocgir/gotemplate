@@ -17,10 +17,9 @@ type IDictionary interface {
 	Flush(...interface{}) IDictionary                        // Removes all specified keys from the dictionary. If no key is specified, all keys are removed.
 	Get(...interface{}) interface{}                          // Returns the values associated with key.
 	GetHelpers() (IDictionaryHelper, IListHelper)            // Returns the helpers implementation associated with the current type.
-	GetKeys() IGenericList                                   // Returns the keys in the dictionary in alphabetical order.
+	GetKeys() StringArray                                    // Returns the keys in the dictionary in alphabetical order.
 	GetValues() IGenericList                                 // Returns the values in the dictionary in alphabetical order of keys.
 	Has(...interface{}) bool                                 // Returns true if the dictionary object contains all the key.
-	KeysAsString() StringArray                               // Returns the keys in the dictionary in alphabetical order.
 	Merge(IDictionary, ...IDictionary) IDictionary           // Merges the other dictionaries into the current dictionary.
 	Native() interface{}                                     // Returns the object casted as native go type (applied recursively).
 	Omit(interface{}, ...interface{}) IDictionary            // Returns a distinct copy of the object including all keys except specified ones.
@@ -34,6 +33,7 @@ type IDictionary interface {
 // IDictionaryHelper represents objects that implement IDictionary compatible objects
 type IDictionaryHelper interface {
 	AsDictionary(interface{}) IDictionary                    // Returns the object casted as IDictionary.
+	AsMap(interface{}) map[string]interface{}                // Returns the object casted as map[string]interface{}
 	Convert(object interface{}) interface{}                  // Tries to convert the supplied object into IDictionary or IGenericList.
 	CreateDictionary(args ...int) IDictionary                // Creates a new IDictionary with optional capacity arguments.
 	TryAsDictionary(object interface{}) (IDictionary, error) // Tries to convert any object to IDictionary objects
@@ -49,9 +49,12 @@ func assertDictionaryHelper() {
 	}
 }
 
+// AsMap returns the object casted as map[string]interface{}.
+func AsMap(object interface{}) map[string]interface{} { return AsDictionary(object).AsMap() }
+
 // AsDictionary returns the object casted as IDictionary.
 func AsDictionary(object interface{}) IDictionary {
-	return must(TryAsDictionary(object)).(IDictionary)
+	return Must(TryAsDictionary(object)).(IDictionary)
 }
 
 // CreateDictionary instantiates a new dictionary with optional size.

@@ -7,11 +7,14 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 
 	"github.com/coveo/gotemplate/collections"
 	"github.com/coveo/gotemplate/errors"
+	"github.com/coveo/gotemplate/text/template"
+	"github.com/coveo/gotemplate/text/template/parse"
 	"github.com/coveo/gotemplate/utils"
 	"github.com/fatih/color"
 	"golang.org/x/crypto/ssh/terminal"
@@ -32,11 +35,10 @@ var (
 func p(name, expr string) string { return fmt.Sprintf("(?P<%s>%s)", name, expr) }
 
 const (
-	noValue      = "<no value>"
 	noValueRepl  = "!NO_VALUE!"
 	nilValue     = "<nil>"
 	nilValueRepl = "!NIL_VALUE!"
-	undefError   = `"` + noValue + `"`
+	undefError   = `"` + NoValue + `"`
 	noValueError = "contains undefined value(s)"
 	runError     = `"<RUN_ERROR>"`
 	tagLine      = "line"
@@ -79,7 +81,7 @@ func (t Template) processContentInternal(originalContent, source string, origina
 
 		if !t.options[AcceptNoValue] {
 			// We replace any pre-existing no value to avoid false error detection
-			content = strings.Replace(content, noValue, noValueRepl, -1)
+			content = strings.Replace(content, NoValue, noValueRepl, -1)
 			content = strings.Replace(content, nilValue, nilValueRepl, -1)
 		}
 
@@ -107,7 +109,7 @@ func (t Template) processContentInternal(originalContent, source string, origina
 			originalSourceLines = strings.Split(originalContent, "\n")
 		}
 
-		regexGroup := must(utils.GetRegexGroup("Parse", templateErrors)).([]*regexp.Regexp)
+		regexGroup := Must(utils.GetRegexGroup("Parse", templateErrors)).([]*regexp.Regexp)
 
 		if matches, _ := utils.MultiMatch(err.Error(), regexGroup...); len(matches) > 0 {
 			// We remove the faulty line and continue the processing to get all errors at once
@@ -116,10 +118,6 @@ func (t Template) processContentInternal(originalContent, source string, origina
 			faultyColumn := 0
 			key, message, errText, code := matches[tagKey], matches[tagMsg], matches[tagErr], matches[tagCode]
 
-			if strings.Contains(errText, "unclosed action") && faultyLine > 0 {
-				// Unclosed action reports error on the line following the non closed action
-				faultyLine--
-			}
 			if matches[tagCol] != "" {
 				faultyColumn = toInt(matches[tagCol]) - 1
 			}
@@ -141,7 +139,7 @@ func (t Template) processContentInternal(originalContent, source string, origina
 				if fileContent, err := ioutil.ReadFile(matches[tagFile]); err != nil {
 					currentLine = String(fmt.Sprintf("Unable to read file: %v", err))
 				} else {
-					currentLine = String(fileContent).Lines()[toInt(matches[tagLine])-1]
+					currentLine = String(fileContent).Lines().Strings()[toInt(matches[tagLine])-1]
 				}
 				return "", fmt.Errorf("%s %v in: %s", color.WhiteString(source), err, color.HiBlackString(currentLine.Str()))
 			}
@@ -166,12 +164,12 @@ func (t Template) processContentInternal(originalContent, source string, origina
 				left := fmt.Sprintf(`(?P<begin>(%s-?\s*(if|range|with)\s.*|\()\s*)?`, regexp.QuoteMeta(t.LeftDelim()))
 				right := fmt.Sprintf(`(?P<end>\s*(-?%s|\)))`, regexp.QuoteMeta(t.RightDelim()))
 				const (
-					ifUndef = "ifUndef"
+					IfUndef = "IfUndef"
 					isZero  = "isZero"
 					assert  = "assert"
 				)
 				undefRegexDefintions := []string{
-					fmt.Sprintf(`%[1]s(undef|ifUndef|default)\s+(?P<%[3]s>.*?)\s+%[4]s%[2]s`, left, right, ifUndef, undefError),
+					fmt.Sprintf(`%[1]s(undef|IfUndef|default)\s+(?P<%[3]s>.*?)\s+%[4]s%[2]s`, left, right, IfUndef, undefError),
 					fmt.Sprintf(`%[1]s(?P<%[3]s>%[3]s|isNil|isNull|isEmpty|isSet)\s+%[4]s%[2]s`, left, right, isZero, undefError),
 					fmt.Sprintf(`%[1]s%[3]s\s+(?P<%[3]s>%[4]s).*?%[2]s`, left, right, assert, undefError),
 				}
@@ -181,10 +179,10 @@ func (t Template) processContentInternal(originalContent, source string, origina
 				}
 				undefMatches, n := utils.MultiMatch(newContext, expressions...)
 
-				if undefMatches[ifUndef] != "" {
+				if undefMatches[IfUndef] != "" {
 					logMessage = fmt.Sprintf("Managed undefined value %s: %s", key, context)
 					err = nil
-					lines[faultyLine] = newLine.Replace(newContext, expressions[n].ReplaceAllString(newContext, fmt.Sprintf("${begin}${%s}${end}", ifUndef))).Str()
+					lines[faultyLine] = newLine.Replace(newContext, expressions[n].ReplaceAllString(newContext, fmt.Sprintf("${begin}${%s}${end}", IfUndef))).Str()
 				} else if undefMatches[isZero] != "" {
 					logMessage = fmt.Sprintf("Managed undefined value %s: %s", key, context)
 					err = nil
@@ -234,7 +232,6 @@ func (t Template) processContentInternal(originalContent, source string, origina
 				if err2 != nil {
 					if err != nil && errText != noValueError {
 						if err.Error() == err2.Error() {
-							// TODO See: https://github.com/golang/go/issues/27319
 							err = fmt.Errorf("%v\n%s", err, color.HiRedString("Unable to continue processing to check for further errors"))
 						} else {
 							err = fmt.Errorf("%v\n%v", err, err2)
@@ -251,6 +248,13 @@ func (t Template) processContentInternal(originalContent, source string, origina
 
 	context := t.GetNewContext(filepath.Dir(source), true)
 	newTemplate := context.New(source)
+
+	newTemplate.AddMissingHandler("fo", func(fieldName string, receiver reflect.Value, node parse.Node) (result interface{}, action template.MissingAction) {
+		if list, err := collections.TryAsList(receiver.Interface()); err == nil {
+			return list, template.ReceiverIsArray
+		}
+		return
+	})
 
 	if topCall {
 		newTemplate.Option("missingkey=default")
@@ -285,7 +289,7 @@ func (t Template) processContentInternal(originalContent, source string, origina
 
 	if topCall && !t.options[AcceptNoValue] {
 		// Detect possible <no value> or <nil> that could be generated
-		if pos := strings.Index(strings.Replace(result, nilValue, noValue, -1), noValue); pos >= 0 {
+		if pos := strings.Index(strings.Replace(result, nilValue, NoValue, -1), NoValue); pos >= 0 {
 			line := len(strings.Split(result[:pos], "\n"))
 			return handleError(fmt.Errorf("template: %s:%d: %s", source, line, noValueError))
 		}
@@ -293,7 +297,7 @@ func (t Template) processContentInternal(originalContent, source string, origina
 
 	if !t.options[AcceptNoValue] {
 		// We restore the existing no value if any
-		result = strings.Replace(result, noValueRepl, noValue, -1)
+		result = strings.Replace(result, noValueRepl, NoValue, -1)
 		result = strings.Replace(result, nilValueRepl, nilValue, -1)
 	}
 	return
@@ -353,15 +357,15 @@ func (t Template) ProcessTemplate(template, sourceFolder, targetFolder string) (
 		return "", nil
 	}
 
-	mode := must(os.Stat(template)).(os.FileInfo).Mode()
+	mode := Must(os.Stat(template)).(os.FileInfo).Mode()
 	if !isTemplate && !t.options[Overwrite] {
 		newName := template + ".original"
 		log.Noticef("%s => %s", utils.Relative(t.folder, template), utils.Relative(t.folder, newName))
-		must(os.Rename(template, template+".original"))
+		Must(os.Rename(template, template+".original"))
 	}
 
 	if sourceFolder != targetFolder {
-		must(os.MkdirAll(filepath.Dir(resultFile), 0777))
+		Must(os.MkdirAll(filepath.Dir(resultFile), 0777))
 	}
 	log.Notice("Writing file", utils.Relative(t.folder, resultFile))
 
@@ -381,8 +385,8 @@ func (t Template) ProcessTemplate(template, sourceFolder, targetFolder string) (
 
 // ProcessTemplates loads and runs the file template or execute the content if it is not a file.
 func (t Template) ProcessTemplates(sourceFolder, targetFolder string, templates ...string) (resultFiles []string, err error) {
-	sourceFolder = iif(sourceFolder == "", t.folder, sourceFolder).(string)
-	targetFolder = iif(targetFolder == "", t.folder, targetFolder).(string)
+	sourceFolder = IIf(sourceFolder == "", t.folder, sourceFolder).(string)
+	targetFolder = IIf(targetFolder == "", t.folder, targetFolder).(string)
 	resultFiles = make([]string, 0, len(templates))
 
 	print := t.options[OutputStdout]
@@ -408,14 +412,14 @@ func (t Template) ProcessTemplates(sourceFolder, targetFolder string, templates 
 func (t Template) printResult(source, target, result string) (err error) {
 	if utils.IsTerraformFile(target) {
 		base := filepath.Base(target)
-		tempFolder := must(ioutil.TempDir(t.TempFolder, base)).(string)
+		tempFolder := Must(ioutil.TempDir(t.TempFolder, base)).(string)
 		tempFile := filepath.Join(tempFolder, base)
 		err = ioutil.WriteFile(tempFile, []byte(result), 0644)
 		if err != nil {
 			return
 		}
 		err = utils.TerraformFormat(tempFile)
-		bytes := must(ioutil.ReadFile(tempFile)).([]byte)
+		bytes := Must(ioutil.ReadFile(tempFile)).([]byte)
 		result = string(bytes)
 	}
 

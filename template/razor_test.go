@@ -45,7 +45,7 @@ func TestTemplate_applyRazor(t *testing.T) {
 	collections.DictionaryHelper = json.DictionaryHelper
 	template.options[AcceptNoValue] = true
 
-	load := func(path string) []byte { return must(ioutil.ReadFile(path)).([]byte) }
+	load := func(path string) []byte { return Must(ioutil.ReadFile(path)).([]byte) }
 
 	tests := make([]test, 0, len(files))
 	for _, file := range files {

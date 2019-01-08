@@ -8,7 +8,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/coveo/gotemplate/collections"
 	"github.com/fatih/color"
 )
 
@@ -23,7 +22,7 @@ func nodeValue(node ast.Node) (result string, err error) {
 			return
 		}
 		if op == "sub" {
-			result = iif(unicode.IsDigit(rune(x[0])), "-"+x, fmt.Sprintf("sub 0 %s", x)).(string)
+			result = IIf(unicode.IsDigit(rune(x[0])), "-"+x, fmt.Sprintf("sub 0 %s", x)).(string)
 			break
 		}
 		result = fmt.Sprintf("%s %s", op, x)
@@ -50,7 +49,7 @@ func nodeValue(node ast.Node) (result string, err error) {
 			result = globalRep + result
 		}
 	case *ast.BasicLit:
-		result = fmt.Sprint(n.Value)
+		result = n.Value
 	case *ast.SelectorExpr:
 		var x, sel string
 		if x, err = nodeValueInternal(n.X); err != nil {
@@ -75,7 +74,7 @@ func nodeValue(node ast.Node) (result string, err error) {
 		}
 		fun = fun + funcCall
 		if len(n.Args) == 0 {
-			result = fmt.Sprint(fun)
+			result = fun
 		} else {
 			args := make([]string, len(n.Args))
 			for i := range n.Args {
@@ -168,8 +167,8 @@ func nodeValueInternal(node ast.Node) (result string, err error) {
 		return
 	}
 
-	// if first, _ := collections.Split2(result, " "); !strings.HasPrefix(first, dotRep) || strings.Contains(first, funcCall) {
-	if first, _ := collections.Split2(result, " "); !(strings.HasPrefix(first, dotRep) && strings.Contains(first, funcCall)) {
+	// if first, _ := Split2(result, " "); !strings.HasPrefix(first, dotRep) || strings.Contains(first, funcCall) {
+	if first, _ := Split2(result, " "); !(strings.HasPrefix(first, dotRep) && strings.Contains(first, funcCall)) {
 		result = fmt.Sprintf("(%s)", result)
 	}
 	return

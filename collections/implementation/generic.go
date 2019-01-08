@@ -22,10 +22,12 @@ func (l baseList) Has(values ...interface{}) bool      { return l.Contains(value
 func (l baseList) Last() interface{}                   { return baseListHelper.GetIndexes(l, len(l)-1) }
 func (l baseList) New(args ...interface{}) baseIList   { return baseListHelper.NewList(args...) }
 func (l baseList) Reverse() baseIList                  { return baseListHelper.Reverse(l) }
-func (l baseList) Strings() []string                   { return baseListHelper.GetStrings(l) }
-func (l baseList) StringArray() strArray               { return baseListHelper.GetStringArray(l) }
-func (l baseList) TypeName() str                       { return "base" }
-func (l baseList) Join(sep interface{}) str            { return l.StringArray().Join(sep) }
+func (l baseList) Sorted() baseIList                   { return baseListHelper.Sorted(l) }
+func (l baseList) Strings() StringArray                { return baseListHelper.GetStrings(l) }
+func (l baseList) StdStrings() []string                { return baseListHelper.GetStdStrings(l) }
+func (l baseList) TypeName() String                    { return "base" }
+func (l baseList) Join(sep IString) String             { return baseListHelper.Join(l, sep) }
+func (l baseList) JoinLines() String                   { return baseListHelper.Join(l, "\n") }
 func (l baseList) Unique() baseIList                   { return baseListHelper.Unique(l) }
 
 func (l baseList) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
@@ -82,13 +84,12 @@ func (d baseDict) CreateList(args ...int) baseIList    { return baseHelper.Creat
 func (d baseDict) Flush(keys ...interface{}) baseIDict { return baseDictHelper.Flush(d, keys) }
 func (d baseDict) Get(keys ...interface{}) interface{} { return baseDictHelper.Get(d, keys) }
 func (d baseDict) Has(keys ...interface{}) bool        { return baseDictHelper.Has(d, keys) }
-func (d baseDict) GetKeys() baseIList                  { return baseDictHelper.GetKeys(d) }
-func (d baseDict) KeysAsString() strArray              { return baseDictHelper.KeysAsString(d) }
+func (d baseDict) GetKeys() StringArray                { return baseDictHelper.GetKeys(d) }
 func (d baseDict) Pop(keys ...interface{}) interface{} { return baseDictHelper.Pop(d, keys) }
 func (d baseDict) GetValues() baseIList                { return baseDictHelper.GetValues(d) }
 func (d baseDict) Set(key, v interface{}) baseIDict    { return baseDictHelper.Set(d, key, v) }
 func (d baseDict) Transpose() baseIDict                { return baseDictHelper.Transpose(d) }
-func (d baseDict) TypeName() str                       { return "base" }
+func (d baseDict) TypeName() String                    { return "base" }
 
 func (d baseDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
 	return baseDictHelper, baseListHelper
@@ -122,14 +123,25 @@ var baseListHelper = helperList{BaseHelper: baseHelper}
 var baseDictHelper = helperDict{BaseHelper: baseHelper}
 
 // DictionaryHelper gives public access to the basic dictionary functions
-var DictionaryHelper collections.IDictionaryHelper = baseDictHelper
+var DictionaryHelper = baseDictHelper
 
 // GenericListHelper gives public access to the basic list functions
-var GenericListHelper collections.IListHelper = baseListHelper
+var GenericListHelper = baseListHelper
 
 type (
-	str      = collections.String
-	strArray = collections.StringArray
+	// String imported from collections
+	String = collections.String
+
+	// StringArray imported from collections
+	StringArray = collections.StringArray
+
+	// IString imported from collections
+	IString = collections.IString
 )
 
-var iif = collections.IIf
+// Vars imported from collections
+var (
+	IIf         = collections.IIf
+	AsString    = collections.AsString
+	AsStdString = collections.AsStdString
+)

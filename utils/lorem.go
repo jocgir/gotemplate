@@ -43,7 +43,7 @@ func GetLoremKind(name string) (kind LoremKind, err error) {
 }
 
 // Lorem generates random string using lorem ipsum generator
-func Lorem(kind LoremKind, params ...int) (string, error) {
+func Lorem(kind LoremKind, params ...int) (String, error) {
 	min := 3
 	max := 10
 	if len(params) > 0 {
@@ -54,17 +54,17 @@ func Lorem(kind LoremKind, params ...int) (string, error) {
 	}
 	switch kind {
 	case Sentence:
-		return goLorem.Sentence(min, max), nil
+		return String(goLorem.Sentence(min, max)), nil
 	case Paragraph:
-		return goLorem.Paragraph(min, max), nil
+		return String(goLorem.Paragraph(min, max)), nil
 	case Word:
-		return goLorem.Word(min, max), nil
+		return String(goLorem.Word(min, max)), nil
 	case Host:
-		return goLorem.Host(), nil
+		return String(goLorem.Host()), nil
 	case EMail:
-		return goLorem.Email(), nil
+		return String(goLorem.Email()), nil
 	case URL:
-		return goLorem.Url(), nil
+		return String(goLorem.Url()), nil
 	default:
 		return "", fmt.Errorf("Unknown lorem type %v", kind)
 	}

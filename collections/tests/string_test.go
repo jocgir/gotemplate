@@ -1,9 +1,11 @@
-package collections
+package tests
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/coveo/gotemplate/collections"
 )
 
 func TestUnIndent(t *testing.T) {
@@ -41,7 +43,7 @@ func TestUnIndent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := UnIndent(tt.args.s); got != tt.want {
+			if got := collections.UnIndent(tt.args.s); got != tt.want {
 				t.Errorf("UnIndent() = %v, want %v", got, tt.want)
 			}
 		})
@@ -52,7 +54,7 @@ func TestString_ToTitle(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		s    String
+		s    str
 		want string
 	}{
 		{"Hello world", "HELLO WORLD"},
@@ -60,7 +62,7 @@ func TestString_ToTitle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(string(tt.s), func(t *testing.T) {
 			if got := tt.s.ToTitle(); string(got) != tt.want {
-				t.Errorf("String.ToTitle() = %v, want %v", got, tt.want)
+				t.Errorf("str.ToTitle() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -103,9 +105,9 @@ func TestString_GetWordAtPosition(t *testing.T) {
 		accept []string
 	}
 	tests := []struct {
-		s       String
+		s       str
 		args    args
-		want    String
+		want    str
 		wantPos int
 	}{
 		{"", args{0, nil}, "", -1},
@@ -124,13 +126,13 @@ func TestString_GetWordAtPosition(t *testing.T) {
 		t.Run(tt.s.Str(), func(t *testing.T) {
 			got, pos := tt.s.GetWordAtPosition(tt.args.pos, tt.args.accept...)
 			if got != tt.want {
-				t.Errorf("String.GetWordAtPosition() got = %v, want %v", got, tt.want)
+				t.Errorf("str.GetWordAtPosition() got = %v, want %v", got, tt.want)
 			}
 			if pos != tt.wantPos {
-				t.Errorf("String.GetWordAtPosition() pos = %d, want %d", pos, tt.wantPos)
+				t.Errorf("str.GetWordAtPosition() pos = %d, want %d", pos, tt.wantPos)
 			}
 			if got2 := tt.s.SelectWord(tt.args.pos, tt.args.accept...); got != got2 {
-				t.Errorf("String.SelectWord() returns %v while String.GetWordAtPosition() returns %v", got, got2)
+				t.Errorf("str.SelectWord() returns %v while str.GetWordAtPosition() returns %v", got, got2)
 			}
 		})
 	}
@@ -145,9 +147,9 @@ func TestString_GetContextAtPosition(t *testing.T) {
 		right string
 	}
 	tests := []struct {
-		s       String
+		s       str
 		args    args
-		want    String
+		want    str
 		wantPos int
 	}{
 		{"", args{0, "", ""}, "", -1},
@@ -178,13 +180,13 @@ func TestString_GetContextAtPosition(t *testing.T) {
 		t.Run(tt.s.Str(), func(t *testing.T) {
 			got, pos := tt.s.GetContextAtPosition(tt.args.pos, tt.args.left, tt.args.right)
 			if got != tt.want {
-				t.Errorf("String.GetContextAtPosition() got = %v, want %v", got, tt.want)
+				t.Errorf("str.GetContextAtPosition() got = %v, want %v", got, tt.want)
 			}
 			if pos != tt.wantPos {
-				t.Errorf("String.GetContextAtPosition() pos = %v, want %v", pos, tt.wantPos)
+				t.Errorf("str.GetContextAtPosition() pos = %v, want %v", pos, tt.wantPos)
 			}
 			if got2 := tt.s.SelectContext(tt.args.pos, tt.args.left, tt.args.right); got != got2 {
-				t.Errorf("String.SelectContext() returns %v while String.SelectWord() returns %v", got, got2)
+				t.Errorf("str.SelectContext() returns %v while str.SelectWord() returns %v", got, got2)
 			}
 		})
 	}
@@ -193,36 +195,39 @@ func TestString_GetContextAtPosition(t *testing.T) {
 func TestString_Protect(t *testing.T) {
 	t.Parallel()
 
+	type iList = collections.IGenericList
+	strList := genHelper.NewStringList
+
 	tests := []struct {
-		name      String
-		want      String
-		wantArray StringArray
+		name      str
+		want      str
+		wantArray iList
 	}{
 		{"", "", nil},
-		{`"This is a string"`, `"♠0"`, StringArray{`"This is a string"`}},
-		{`A test with a "single string"`, `A test with a "♠0"`, StringArray{`"single string"`}},
-		{"A test with `backtick string`", `A test with "♠0"`, StringArray{"`backtick string`"}},
+		{`"This is a string"`, `"♠0"`, strList(`"This is a string"`)},
+		{`A test with a "single string"`, `A test with a "♠0"`, strList(`"single string"`)},
+		{"A test with `backtick string`", `A test with "♠0"`, strList("`backtick string`")},
 		{`Non closed "string`, `Non closed "string`, nil},
-		{`Non closed "with" escape "\"`, `Non closed "♠0" escape "\"`, StringArray{`"with"`}},
-		{`This contains two "string1" and "string2"`, `This contains two "♠0" and "♠1"`, StringArray{`"string1"`, `"string2"`}},
-		{"A mix of `backtick` and \"regular\" string", `A mix of "♠0" and "♠1" string`, StringArray{"`backtick`", `"regular"`}},
-		{"A confused one of `backtick with \"` and \"regular with \\\" quoted and ` inside\" string", "A confused one of \"♠0\" and \"♠1\" string", StringArray{"`backtick with \"`", "\"regular with \\\" quoted and ` inside\""}},
-		{`A string with "false \\\\\\" inside"`, `A string with "♠0" inside"`, StringArray{`"false \\\\\\"`}},
-		{`A string with "true \\\\\\\" inside"`, `A string with "♠0"`, StringArray{`"true \\\\\\\" inside"`}},
+		{`Non closed "with" escape "\"`, `Non closed "♠0" escape "\"`, strList(`"with"`)},
+		{`This contains two "string1" and "string2"`, `This contains two "♠0" and "♠1"`, strList(`"string1"`, `"string2"`)},
+		{"A mix of `backtick` and \"regular\" string", `A mix of "♠0" and "♠1" string`, strList("`backtick`", `"regular"`)},
+		{"A confused one of `backtick with \"` and \"regular with \\\" quoted and ` inside\" string", "A confused one of \"♠0\" and \"♠1\" string", strList("`backtick with \"`", "\"regular with \\\" quoted and ` inside\"")},
+		{`A string with "false \\\\\\" inside"`, `A string with "♠0" inside"`, strList(`"false \\\\\\"`)},
+		{`A string with "true \\\\\\\" inside"`, `A string with "♠0"`, strList(`"true \\\\\\\" inside"`)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name.Str(), func(t *testing.T) {
 			got, array := tt.name.Protect()
 			if got != tt.want {
-				t.Errorf("String.Protect() got = %v, want %v", got, tt.want)
+				t.Errorf("str.Protect() got = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(array, tt.wantArray) {
-				t.Errorf("String.Protect() array = %v, want %v", array, tt.wantArray)
+				t.Errorf("str.Protect() array = %v, want %v", array, tt.wantArray)
 			}
 
 			restored := got.RestoreProtected(array)
 			if tt.name != restored {
-				t.Errorf("String.RestoreProtected() got %v, want %v", restored, tt.name)
+				t.Errorf("str.RestoreProtected() got %v, want %v", restored, tt.name)
 			}
 		})
 	}
@@ -232,7 +237,7 @@ func TestString_ParseBool(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		value String
+		value str
 		want  bool
 	}{
 		{"", false},
@@ -262,7 +267,7 @@ func TestString_ParseBool(t *testing.T) {
 func TestString_IndexAll(t *testing.T) {
 	tests := []struct {
 		name       string
-		s          String
+		s          str
 		substr     string
 		wantResult []int
 	}{
@@ -275,7 +280,7 @@ func TestString_IndexAll(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotResult := tt.s.IndexAll(tt.substr); !reflect.DeepEqual(gotResult, tt.wantResult) {
-				t.Errorf("String.IndexAll() = %v, want %v", gotResult, tt.wantResult)
+				t.Errorf("str.IndexAll() = %v, want %v", gotResult, tt.wantResult)
 			}
 		})
 	}
@@ -284,9 +289,9 @@ func TestString_IndexAll(t *testing.T) {
 func TestString_AddLineNumber(t *testing.T) {
 	tests := []struct {
 		name  string
-		s     String
+		s     str
 		space int
-		want  String
+		want  str
 	}{
 		{"Empty", "", 0, "1 "},
 		{"Just a newline", "\n", 0, "1 \n2 "},
@@ -296,7 +301,7 @@ func TestString_AddLineNumber(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.s.AddLineNumber(tt.space); got != tt.want {
-				t.Errorf("String.AddLineNumber() = %v, want %v", got, tt.want)
+				t.Errorf("str.AddLineNumber() = %v, want %v", got, tt.want)
 			}
 		})
 	}

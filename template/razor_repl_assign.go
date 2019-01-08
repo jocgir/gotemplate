@@ -75,16 +75,16 @@ func assignExpressionInternal(repl replacement, match string, acceptError bool) 
 	} else if strings.HasSuffix(tp, ".") {
 		object = "." + object
 	} else {
-		object = iif(object == "", "$", "$."+object).(string)
+		object = IIf(object == "", "$", "$."+object).(string)
 	}
 
 	// To avoid breaking change, we issue a warning instead of assertion if the variable has not been declared before being set
 	// or declared more than once and the feature flag GOTEMPLATE_DEPRECATED_ASSIGN is not set
-	validateFunction := iif(deprecatedAssign, "assert", "assertWarning")
+	validateFunction := IIf(deprecatedAssign, "assert", "assertWarning")
 	validateCode := fmt.Sprintf(map[bool]string{
 		true:  `%[2]s (not (isNil %[1]s)) "%[1]s does not exist, use := to declare new variable"`,
 		false: `%[2]s (isNil %[1]s) "%[1]s has already been declared, use = to overwrite existing value"`,
-	}[assign == "="], fmt.Sprintf("%s%s", iif(strings.HasSuffix(object, "."), object, object+"."), id), validateFunction)
+	}[assign == "="], fmt.Sprintf("%s%s", IIf(strings.HasSuffix(object, "."), object, object+"."), id), validateFunction)
 
 	return fmt.Sprintf(`%[1]s- %[3]s %[2]s%[1]s- set %[4]s "%[5]s" %s %[2]s`, repl.delimiters[0], repl.delimiters[1], validateCode, object, id, expr, repl.delimiters[1])
 }

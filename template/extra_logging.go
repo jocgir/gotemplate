@@ -57,7 +57,7 @@ func (t *Template) addLoggingFuncs() {
 }
 
 func logBase(f func(...interface{}), args ...interface{}) string {
-	f(utils.FormatMessage(args...))
+	f(FormatMessage(args...))
 	return ""
 }
 

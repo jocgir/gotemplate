@@ -8,7 +8,7 @@ import (
 	"github.com/coveo/gotemplate/collections/implementation"
 )
 
-type iList = collections.IGenericList
+type IGenericList = collections.IGenericList
 type list = implementation.ListTypeName
 
 func TestFormatList(t *testing.T) {
@@ -19,7 +19,7 @@ func TestFormatList(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want iList
+		want IGenericList
 	}{
 		{"quote", args{`"%v"`, []int{1, 2}}, list{`"1"`, `"2"`}},
 		{"greating", args{"Hello %v", []int{1, 2}}, list{"Hello 1", "Hello 2"}},
@@ -36,13 +36,13 @@ func TestFormatList(t *testing.T) {
 func TestMergeLists(t *testing.T) {
 	tests := []struct {
 		name string
-		args []iList
-		want iList
+		args []IGenericList
+		want IGenericList
 	}{
 		{"Empty list", nil, nil},
-		{"Simple list", []iList{list{1, 2, 3}}, list{1, 2, 3}},
-		{"Two lists", []iList{list{1, 2, 3}, list{4, 5, 6}}, list{1, 2, 3, 4, 5, 6}},
-		{"Three lists mixed", []iList{list{"One", 2, "3"}, list{4, 5, 6}, list{"7", "8", "9"}}, list{"One", 2, "3", 4, 5, 6, "7", "8", "9"}},
+		{"Simple list", []IGenericList{list{1, 2, 3}}, list{1, 2, 3}},
+		{"Two lists", []IGenericList{list{1, 2, 3}, list{4, 5, 6}}, list{1, 2, 3, 4, 5, 6}},
+		{"Three lists mixed", []IGenericList{list{"One", 2, "3"}, list{4, 5, 6}, list{"7", "8", "9"}}, list{"One", 2, "3", 4, 5, 6, "7", "8", "9"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

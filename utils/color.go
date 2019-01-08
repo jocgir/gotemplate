@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/coveo/gotemplate/collections"
 	"github.com/coveo/gotemplate/errors"
 	"github.com/fatih/color"
 )
@@ -74,8 +75,6 @@ const (
 	BgHiWhite
 )
 
-var EOL = fmt.Sprintln()
-
 //go:generate stringer -type=Attribute -output generated_colors.go
 
 // Color returns a color attribute build from supplied attribute names
@@ -99,7 +98,7 @@ func Color(attributes ...string) (*color.Color, error) {
 	var err errors.Array
 	for _, attr := range attributes {
 		for _, attr := range String(attr).FieldsID().Strings() {
-			if a, match := nameValues[strings.ToLower(attr)]; match {
+			if a, match := nameValues[attr.ToLower().Str()]; match {
 				result.Add(a)
 				containsColor = true
 
@@ -130,24 +129,7 @@ func SprintColor(args ...interface{}) (string, error) {
 	}
 
 	c, _ := Color(colorArgs...)
-	return c.Sprint(FormatMessage(args[i:]...)), nil
-}
-
-// FormatMessage analyses the arguments to determine if printf or println should be used.
-func FormatMessage(args ...interface{}) string {
-	switch len(args) {
-	case 0:
-		return ""
-	case 1:
-		return fmt.Sprint(args[0])
-	default:
-		if format, args := fmt.Sprint(args[0]), args[1:]; strings.Contains(format, "%") {
-			if result := fmt.Sprintf(format, args...); !strings.Contains(result, "%!") {
-				return result
-			}
-		}
-		return strings.TrimSuffix(fmt.Sprintln(args...), EOL)
-	}
+	return c.Sprint(collections.FormatMessage(args[i:]...)), nil
 }
 
 var nameValues map[string]color.Attribute

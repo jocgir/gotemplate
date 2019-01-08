@@ -22,7 +22,7 @@ func MergeLists(lists ...collections.IGenericList) collections.IGenericList {
 }
 
 // FormatList returns an array of string where format as been applied on every element of the supplied array
-func FormatList(format string, args ...interface{}) collections.IGenericList {
+func FormatList(format interface{}, args ...interface{}) collections.IGenericList {
 	var list collections.IGenericList
 	switch len(args) {
 	case 1:
@@ -34,7 +34,7 @@ func FormatList(format string, args ...interface{}) collections.IGenericList {
 	}
 	result := list.Clone()
 	for i, value := range list.AsArray() {
-		result.Set(i, fmt.Sprintf(format, value))
+		result.Set(i, String(fmt.Sprintf(fmt.Sprint(format), value)))
 	}
 	return result
 }

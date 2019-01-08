@@ -20,7 +20,7 @@ func autoWrap(repl replacement, match string) string {
 	return fmt.Sprintf("@%s%sjoin(\"%s\", formatList(\"%s%%v%s\", %s)",
 		matches["nl"],
 		matches["reduce"],
-		iif(matches["nl"] != "", "\\n", ""),
+		IIf(matches["nl"] != "", "\\n", ""),
 		before.Escape(),
 		after.RestoreProtected(strings).Escape(),
 		args.RestoreProtected(strings)[1:],

@@ -19,7 +19,8 @@ type IGenericList interface {
 	GetHelpers() (IDictionaryHelper, IListHelper)           // Returns the helpers implementation associated with the current type.
 	Has(...interface{}) bool                                // Alias for contains
 	Intersect(...interface{}) IGenericList                  // Returns a list that is the result of the intersection of the list and the parameters (removing duplicates).
-	Join(sep interface{}) String                            // Returns the string representation of the list.
+	Join(sep IString) String                                // Returns the string representation of the list.
+	JoinLines() String                                      // Returns the string representation of the list.
 	Last() interface{}                                      // Returns the last element of the list.
 	New(...interface{}) IGenericList                        // Creates a new generic list from the supplied arguments.
 	Pop(indexes ...int) (interface{}, IGenericList)         // Removes and returns the elements of the list (if nothing is specified, remove the last element).
@@ -27,9 +28,10 @@ type IGenericList interface {
 	Remove(indexes ...int) IGenericList                     // Returns a new list without the element specified.
 	Reverse() IGenericList                                  // Returns a copy of the current list in reverse order.
 	Set(index int, value interface{}) (IGenericList, error) // Sets the value at position index into the list. If list is not large enough, it is enlarged to fit the index.
+	Sorted() IGenericList                                   // Returns the sorted list.
 	String() string                                         // Returns the string representation of the list.
-	StringArray() StringArray                               // Returns the current list as StringArray.
-	Strings() []string                                      // Returns the current list as list of strings.
+	Strings() StringArray                                   // Returns the current list as list of String.
+	StdStrings() []string                                   // Returns the current list as list of string.
 	TypeName() String                                       // Returns the actual type name
 	Union(...interface{}) IGenericList                      // Returns a list that represents the union of the list and the elements (removing duplicates).
 	Unique() IGenericList                                   // Returns a copy of the list removing all duplicate elements.
@@ -39,6 +41,7 @@ type IGenericList interface {
 // IListHelper represents objects that implement IGenericList compatible objects
 type IListHelper interface {
 	AsList(interface{}) IGenericList                    // Converts object to IGenericList object. It panics if conversion is impossible.
+	AsArray(interface{}) []interface{}                  // Converts object to []interface{}. It panics if conversion is impossible.
 	Convert(object interface{}) interface{}             // Tries to convert the supplied object into IDictionary or IGenericList.
 	CreateList(...int) IGenericList                     // Creates a new IGenericList with optional size/capacity arguments.
 	NewList(...interface{}) IGenericList                // Creates a new IGenericList from supplied arguments.
@@ -55,6 +58,9 @@ func assertListHelper() {
 		panic(fmt.Errorf("ListHelper not configured"))
 	}
 }
+
+// AsArray returns the object casted as IGenericList.
+func AsArray(object interface{}) []interface{} { return AsList(object).AsArray() }
 
 // AsList returns the object casted as IGenericList.
 func AsList(object interface{}) IGenericList {

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
-
-	"github.com/coveo/gotemplate/collections"
 )
 
 func Test_list_String(t *testing.T) {
@@ -18,18 +16,18 @@ func Test_list_String(t *testing.T) {
 	}{
 		{"Nil", nil, "[]\n"},
 		{"Empty List", yamlList{}, "[]\n"},
-		{"List of int", yamlList{1, 2, 3}, collections.UnIndent(`
+		{"List of int", yamlList{1, 2, 3}, String(`
 			- 1
 			- 2
 			- 3
-			`)[1:]},
-		{"List of string", strFixture, collections.UnIndent(`
+			`).UnIndent()[1:]},
+		{"List of string", strFixture, String(`
 			- Hello
 			- World,
 			- I'm
 			- Foo
 			- Bar!
-			`)[1:]},
+			`).UnIndent()[1:]},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -49,7 +47,7 @@ func Test_dict_String(t *testing.T) {
 		want string
 	}{
 		{"nil", nil, "{}\n"},
-		{"Map", dictFixture, collections.UnIndent(`
+		{"Map", dictFixture, String(`
 			float: 1.23
 			int: 123
 			list:
@@ -66,7 +64,7 @@ func Test_dict_String(t *testing.T) {
 			  "1": 1
 			  "2": two
 			string: Foo bar
-			`)[1:]},
+			`).UnIndent()[1:]},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -86,7 +84,7 @@ func TestUnmarshal(t *testing.T) {
 		want interface{}
 	}{
 		{"nil", "{}\n", yamlDict{}},
-		{"Map", fmt.Sprint(dictFixture), dictFixture},
+		{"Map", asStdString(dictFixture), dictFixture},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

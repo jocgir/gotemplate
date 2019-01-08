@@ -13,7 +13,7 @@ GetHelpers() IDictionaryHelper, IListHelper
 GetKeys() IGenericList
 GetValues() IGenericList
 Has(...interface{}) bool
-KeysAsString() StringArray
+GetKeys() StringArray
 Merge(IDictionary, ...IDictionary) IDictionary
 Native() interface{}
 Omit(interface{}, ...interface{}) IDictionary

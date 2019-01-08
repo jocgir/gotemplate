@@ -1,7 +1,6 @@
 package template
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
@@ -39,7 +38,7 @@ func (t *Template) addNetFuncs() {
 }
 
 func httpGet(url interface{}) (*http.Response, error) {
-	return http.Get(fmt.Sprint(url))
+	return http.Get(asStdString(url))
 }
 
 func httpDocument(url interface{}) (interface{}, error) {

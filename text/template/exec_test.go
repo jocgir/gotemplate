@@ -280,7 +280,7 @@ var execTests = []execTest{
 	// Fields on maps.
 	{"map .one", "{{.MSI.one}}", "1", tVal, true},
 	{"map .two", "{{.MSI.two}}", "2", tVal, true},
-	{"map .NO", "{{.MSI.NO}}", "<no value>", tVal, true},
+	{"map .NO", "{{.MSI.NO}}", NoValue, tVal, true},
 	{"map .one interface", "{{.MXI.one}}", "1", tVal, true},
 	{"map .WRONG args", "{{.MSI.one 1}}", "", tVal, false},
 	{"map .WRONG type", "{{.MII.one}}", "", tVal, false},
@@ -330,7 +330,7 @@ var execTests = []execTest{
 	{"NIL", "{{.NIL}}", "<nil>", tVal, true},
 
 	// Empty interfaces holding values.
-	{"empty nil", "{{.Empty0}}", "<no value>", tVal, true},
+	{"empty nil", "{{.Empty0}}", NoValue, tVal, true},
 	{"empty with int", "{{.Empty1}}", "3", tVal, true},
 	{"empty with string", "{{.Empty2}}", "empty2", tVal, true},
 	{"empty with slice", "{{.Empty3}}", "[7 8]", tVal, true},
@@ -338,8 +338,8 @@ var execTests = []execTest{
 	{"empty with struct, field", "{{.Empty4.V}}", "UinEmpty", tVal, true},
 
 	// Edge cases with <no value> with an interface value
-	{"field on interface", "{{.foo}}", "<no value>", nil, true},
-	{"field on parenthesized interface", "{{(.).foo}}", "<no value>", nil, true},
+	{"field on interface", "{{.foo}}", NoValue, nil, true},
+	{"field on parenthesized interface", "{{(.).foo}}", NoValue, nil, true},
 
 	// Method calls.
 	{".Method0", "-{{.Method0}}-", "-M0-", tVal, true},
@@ -1145,7 +1145,7 @@ func TestMissingMapKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "99 <no value>"
+	want := "99 " + NoValue
 	got := b.String()
 	if got != want {
 		t.Errorf("got %q; expected %q", got, want)
@@ -1157,7 +1157,7 @@ func TestMissingMapKey(t *testing.T) {
 	if err != nil {
 		t.Fatal("default:", err)
 	}
-	want = "99 <no value>"
+	want = "99 " + NoValue
 	got = b.String()
 	if got != want {
 		t.Errorf("got %q; expected %q", got, want)
