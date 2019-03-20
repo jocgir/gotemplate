@@ -13,6 +13,9 @@ install:
 doc:
 	./render-doc
 
+test:
+	go test ./...
+	
 coveralls:
 	wget https://raw.githubusercontent.com/coveo/terragrunt/master/scripts/coverage.sh
 	@sh ./coverage.sh --coveralls

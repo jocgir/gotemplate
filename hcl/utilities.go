@@ -12,7 +12,7 @@ import (
 )
 
 // flatten converts array of map to single map if there is only one element in the array.
-// By default, hc.Unmarshal returns array of map even if there is only a single map in the definition.
+// By default, hcl.Unmarshal returns array of map even if there is only a single map in the definition.
 func flatten(source interface{}) interface{} {
 	switch value := source.(type) {
 	case []map[string]interface{}:
@@ -96,7 +96,7 @@ func marshalHCL(value interface{}, fullHcl, head bool, prefix, indent string) (r
 
 	case []interface{}:
 		results := make([]string, len(value))
-		if fullHcl && isArrayOfMap(value) {
+		if fullHcl && isArrayOfSingleMap(value) {
 			for i, element := range value {
 				element := element.(map[string]interface{})
 				for key := range element {
@@ -218,12 +218,13 @@ func marshalHCL(value interface{}, fullHcl, head bool, prefix, indent string) (r
 	return
 }
 
-func isArrayOfMap(array []interface{}) bool {
+func isArrayOfSingleMap(array []interface{}) bool {
 	if len(array) == 0 {
 		return false
 	}
 	for _, item := range array {
-		if item, isMap := item.([]map[string]interface{}); !isMap || len(item) != 1 {
+		// if item, isMap := item.(map[string]interface{}); !isMap || len(item) != 1 {
+		if item, isMap := item.(map[string]interface{}); !(isMap && singleMap(item) != "") {
 			return false
 		}
 	}

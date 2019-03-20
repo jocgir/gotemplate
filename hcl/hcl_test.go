@@ -51,7 +51,7 @@ func Test_dict_String(t *testing.T) {
 	}
 }
 
-func TestMarshalHCLVars(t *testing.T) {
+func TestMarshalHCL(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
@@ -87,18 +87,81 @@ func TestMarshalHCLVars(t *testing.T) {
 		{"Two level map 1 (pretty)", args{hclDict{"a": hclDict{"b": hclDict{"c": 10, "d": 20}}}, indent}, "a b {\n  c = 10\n  d = 20\n}"},
 		{"Two level map 2", args{hclDict{"a": hclDict{"b": hclDict{"c": 10, "d": 20}}, "e": 30}, noIndent}, "a b {c=10 d=20} e=30"},
 		{"Two level map 2 (pretty)", args{hclDict{"a": hclDict{"b": hclDict{"c": 10, "d": 20}}, "e": 30}, indent}, "e = 30\n\na b {\n  c = 10\n  d = 20\n}"},
+		{"Two level map 3", args{hclDict{"a": hclDict{"b": 10, "c": hclDict{"d": 20, "e": 30}}}, noIndent}, "a {b=10 c{d=20 e=30}}"},
+		{"Two level map 3 (pretty)", args{hclDict{"a": hclDict{"b": 10, "c": hclDict{"d": 20, "e": 30}}}, indent}, "a {\n  b = 10\n  \n  c {\n    d = 20\n    e = 30\n  }\n}"},
 		{"Map", args{hclDict{"a": 0, "bb": 1}, noIndent}, "a=0 bb=1"},
 		{"Map (pretty)", args{hclDict{"a": 0, "bb": 1}, indent}, "a  = 0\nbb = 1"},
 		{"Structure (pretty)", args{test{"name", 1}, indent}, "Name  = \"name\"\nValue = 1"},
 		{"Structure Ptr (pretty)", args{&test{"name", 1}, indent}, "Name  = \"name\"\nValue = 1"},
 		{"Array of 1 structure (pretty)", args{[]test{{"name", 1}}, indent}, "Name  = \"name\"\nValue = 1"},
-		{"Array of 2 structures (pretty)", args{[]test{{"val1", 1}, {"val2", 1}}, indent}, "[\n  {\n    Name  = \"val1\"\n    Value = 1\n  },\n  {\n    Name  = \"val2\"\n    Value = 1\n  },\n]"},
+		{"Array of 2 structures (pretty)", args{[]test{{"val1", 1}, {"val2", 2}}, indent}, "[\n  {\n    Name  = \"val1\"\n    Value = 1\n  },\n  {\n    Name  = \"val2\"\n    Value = 2\n  },\n]"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			value := collections.ToNativeRepresentation(tt.args.value)
 			if got, _ := marshalHCL(value, true, true, "", tt.args.indent); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MarshalHCLVars() = %v, want %v", got, tt.want)
+				t.Errorf("MarshalHCL() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCombo(t *testing.T) {
+	t.Parallel()
+
+	unindent := func(s string) string { return collections.String(s).UnIndent().TrimSpace().Str() }
+	type r map[string]string
+
+	tests := []struct {
+		hcl     string
+		results r
+	}{
+		{`1`, nil},
+		{`3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862`, r{"": "3.141592653589793"}},
+		{`true`, nil},
+		{`false`, nil},
+		{`"Hello world"`, nil},
+		{`"Hello\nworld\n"`, r{
+			"indent=true": unindent(`
+				<<-EOF
+				Hello
+				world
+				EOF
+			`)},
+		},
+		{`[0, 1, 2, 3]`, nil},
+		{`[0, "one", 2.0, "III"]`, nil},
+		{`a = 0 b = "Hello"`, nil},
+		{`a { b = 1 }`, nil},
+		{`a b { c = 1 d = 2 }`, nil},
+		{`a b { c = 1 d = 2 } e = 3`, nil},
+		{`a { b = 1 c { d = 2 e = 3 }}`, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.hcl, func(t *testing.T) {
+			var value interface{}
+			if err := Unmarshal([]byte(tt.hcl), &value); err != nil {
+				t.Errorf("Unmarshal(%v) => %v", tt.hcl, err)
+			}
+			native := collections.ToNativeRepresentation(value)
+
+			for _, indent := range []string{"", "\t"} {
+				for _, hcl := range []bool{false, true} {
+					for _, head := range []bool{false, true} {
+						out, err := marshalHCL(native, hcl, head, "", indent)
+						if err != nil {
+							t.Errorf("marshalHCL(%v, hcl=%v, head=%v, indent=%q) => %v", tt.hcl, hcl, head, indent, err)
+						}
+						result++
+						index := result
+						if index >= len(tt) {
+							index = len(tt) - 1
+						}
+						if out != tt[index] {
+							t.Errorf("marshalHCL(%v, hcl=%v, head=%v, indent=%q) =\n%v\nWant:\n%v", tt.hcl, hcl, head, indent, out, tt[index])
+						}
+					}
+				}
 			}
 		})
 	}
