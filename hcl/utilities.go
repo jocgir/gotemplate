@@ -41,7 +41,8 @@ func flatten(source interface{}) interface{} {
 }
 
 func transform(out interface{}) {
-	result := transformElement(flatten(reflect.ValueOf(out).Elem().Interface()))
+	// result := transformElement(flatten(reflect.ValueOf(out).Elem().Interface()))
+	result := transformElement(reflect.ValueOf(out).Elem().Interface())
 	if _, isMap := out.(*map[string]interface{}); isMap {
 		// If the result is expected to be map[string]interface{}, we convert it back from internal dict type.
 		result = result.(hclIDict).Native()

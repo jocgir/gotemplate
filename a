@@ -1,0 +1,7 @@
+a = {
+    test = <<EOF
+    Hello
+    Comment-ça va?
+EOF
+    b = 2
+}

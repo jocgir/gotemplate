@@ -90,6 +90,14 @@ func (errors Array) Error() string {
 	return strings.Join(errorsStr, "\n")
 }
 
+// AsError returns nil if the array is empty to no break test such as err != nil
+func (errors Array) AsError() error {
+	if len(errors) == 0 {
+		return nil
+	}
+	return errors
+}
+
 // Managed indicates an error that is properly handled (no need to print out stack)
 type Managed string
 

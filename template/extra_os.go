@@ -56,7 +56,7 @@ var osFuncsArgs = arguments{
 var osFuncsAliases = aliases{
 	"diff":     {"difference"},
 	"exists":   {"fileExists", "isExist"},
-	"glob":     {"expand"},
+	"glob":     {"ls", "expand"},
 	"group":    {"userGroup"},
 	"home":     {"homeDir", "homeFolder"},
 	"isDir":    {"isDirectory", "isFolder"},

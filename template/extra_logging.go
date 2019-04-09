@@ -96,9 +96,17 @@ func ConfigureLogging(level, internalLevel logging.Level, simple bool) {
 	if simple {
 		format = `[%{level}] %{message}`
 	}
-	logging.SetBackend(logging.NewBackendFormatter(logging.NewLogBackend(color.Error, "", 0), logging.MustStringFormatter(format)))
+
+	formatter := logging.MustStringFormatter(format)
+	stdBE := logging.NewBackendFormatter(logging.NewLogBackend(color.Error, "", 0), formatter)
+	stream, _ := os.OpenFile("tata", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	fileBE := logging.AddModuleLevel(logging.NewBackendFormatter(logging.NewLogBackend(stream, "", 0), formatter))
+	logging.SetBackend(stdBE, fileBE)
+
 	SetLogLevel(level)
 	logging.SetLevel(internalLevel, loggerInternal)
+	fileBE.SetLevel(logging.DEBUG, logger)
+	fileBE.SetLevel(logging.DEBUG, loggerInternal)
 }
 
 // InitLogging allows configuration of the default logging level

@@ -424,7 +424,7 @@ func (t Template) templateConverter(to marshaler, from unMarshaler, source inter
 
 	var content string
 	if content, _, err = t.runTemplate(fmt.Sprint(source), context...); err == nil {
-		result, err = t.converter(from, content, true, context...)
+		result, err = t.converter(from, content, false, context...)
 	}
 	return
 }
