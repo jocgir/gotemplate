@@ -3,9 +3,11 @@ package template
 import (
 	"fmt"
 	"go/parser"
+	"go/scanner"
 	"regexp"
 	"strings"
 
+	"github.com/coveo/gotemplate/v3/collections"
 	"github.com/coveo/gotemplate/v3/utils"
 	"github.com/fatih/color"
 	"github.com/op/go-logging"
@@ -22,7 +24,7 @@ const (
 	funcCall      = "__FuNcAlL__"
 	typeExpr      = "__TyPe__"
 	mapExpr       = "__MaP__"
-	dotRep        = "__DoT_PrEfIx__"
+	dotRep        = "__DoT__"
 	ellipsisRep   = "__ElLiPsIs__"
 	globalRep     = "__GlObAl__"
 )
@@ -43,6 +45,7 @@ func expressionParserSkipError(repl replacement, match string) string {
 func expressionParserInternal(repl replacement, match string, skipError, internal bool) (result string, err error) {
 	matches, _ := utils.MultiMatch(match, repl.re)
 	var expr, expression string
+	var replacements []collections.Replacement
 	if expression = matches["expr"]; expression != "" {
 		if getLogLevelInternal() >= logging.DEBUG {
 			defer func() {
@@ -54,21 +57,24 @@ func expressionParserInternal(repl replacement, match string, skipError, interna
 
 		// We first protect strings declared in the expression
 		protected, includedStrings := String(expression).Protect()
+		protected, replacements = protected.BatchReplaceReversible(expressionTransformer)
 
 		// We transform the expression into a valid go statement
-		for k, v := range map[string]string{"$": stringRep, "range": rangeExpr, "default": defaultExpr, "func": funcExpr, "...": ellipsisRep, "type": typeExpr, "map": mapExpr} {
-			protected = protected.Replace(k, v)
-		}
-		protected = String(dotPrefix.ReplaceAllString(protected.Str(), fmt.Sprintf("${prefix}%s${value}", dotRep)))
-		for k, v := range map[string]string{ellipsisRep: "...", "<>": "!=", "÷": "/", "≠": "!=", "≦": "<=", "≧": ">=", "«": "<<", "»": ">>"} {
-			protected = protected.Replace(k, v)
-		}
+		// for k, v := range map[string]string{"$": stringRep, "range": rangeExpr, "default": defaultExpr, "func": funcExpr, "...": ellipsisRep, "type": typeExpr, "map": mapExpr} {
+		// 	protected = protected.Replace(k, v)
+		// }
+		//protected = String(dotPrefix.ReplaceAllString(protected.Str(), fmt.Sprintf("${prefix}%s${value}", dotRep)))
+		//protected = protected.Replace(ellipsisRep, "...")
 
-		for key, val := range ops {
-			protected = protected.Replace(" "+val+" ", key)
-		}
+		// for k, v := range map[string]string{"<>": "!=", "÷": "/", "≠": "!=", "≦": "<=", "≧": ">=", "«": "<<", "»": ">>"} {
+		// 	protected = protected.Replace(k, v)
+		// }
+
+		// for key, val := range ops {
+		// 	protected = protected.Replace(" "+val+" ", key)
+		// }
 		// We add support to partial slice
-		protected = String(indexExpression(protected.Str()))
+		//protected = String(indexExpression(protected.Str()))
 
 		// We restore the strings into the expression
 		expr = protected.RestoreProtected(includedStrings).Str()
@@ -109,20 +115,24 @@ func expressionParserInternal(repl replacement, match string, skipError, interna
 			node = nodeValueInternal
 		}
 		tr, err := parser.ParseExpr(expr)
+		if err != nil {
+			pos := err.(scanner.ErrorList)[0].Pos.Offset
+			expr = expr[:pos]
+			if tr2, err2 := parser.ParseExpr(expr); err2 == nil {
+				newRegex := exprFix.ReplaceAllString(repl.re.String(), strings.Replace(regexp.QuoteMeta(utils.BatchReplaceRevert(expr, replacements)), "$", "$$", -1))
+				//remaining = expr[pos:]
+				if must(regexp.MatchString(newRegex, match)).(bool) {
+					err = nil
+					tr = tr2
+				}
+			}
+		}
 		if err == nil {
 			result, err := node(tr)
 			if err == nil {
-				result = strings.Replace(result, stringRep, "$$", -1)
-				result = strings.Replace(result, rangeExpr, "range", -1)
-				result = strings.Replace(result, defaultExpr, "default", -1)
-				result = strings.Replace(result, funcExpr, "func", -1)
-				result = strings.Replace(result, typeExpr, "type", -1)
-				result = strings.Replace(result, mapExpr, "map", -1)
-				result = strings.Replace(result, dotRep, ".", -1)
-				result = strings.Replace(result, globalRep, "$$.", -1)
+				result = String(result).BatchReplace(revertExpressions).Replace("$", "$$").Str()
 				repl.replace = strings.Replace(repl.replace, "${expr}", result, -1)
 				result = repl.re.ReplaceAllString(match, repl.replace)
-				result = strings.Replace(result, "$.slice ", "slice $.", -1)
 				return result, nil
 			}
 		}
@@ -138,9 +148,11 @@ func expressionParserInternal(repl replacement, match string, skipError, interna
 	return repl.re.ReplaceAllString(match, repl.replace), nil
 }
 
+var exprFix = regexp.MustCompile(`\(\?P<expr>.+?\)`)
+
 var exprRepl = replacement{
 	name:    "Expression",
-	re:      regexp.MustCompile(`(?P<expr>.*)`),
+	re:      regexp.MustCompile(`^(?P<expr>.*)$`),
 	replace: `${expr}`,
 }
 
@@ -153,3 +165,55 @@ func indexExpression(expr string) string {
 }
 
 var negativeSlice = regexp.MustCompile(`\[(?P<index>-\d+):]`)
+
+// Build the batch regular expression to replace elements in expression
+// and ensure that the resulting string is valid
+var expressionTransformer = func() *collections.BatchRegex {
+	rp := collections.NewReplacementPair
+	replacementPairs := []collections.ReplacementPair{
+		rp(`\$`, stringRep), // $ is not a valid character
+		// Go reserved word
+		rp("range", rangeExpr),
+		rp("default", defaultExpr),
+		rp("func", funcExpr),
+		rp("type", typeExpr),
+		rp("map", mapExpr),
+		// A variable cannot starts with . in go
+		rp(`(\B\.\b|^\.$)`, dotRep),
+		// Symbol aliases
+		rp("<>", "!="),
+		rp("÷", "/"),
+		rp("≠", "!="),
+		rp("≦", "<="),
+		rp("≧", ">="),
+		rp("«", "<<"),
+		rp("»", ">>"),
+		// Partial index support
+		rp(`\[(?P<index>-\d+):]`, "[${index}:0]"),
+		rp(`\[\]`, "[0:-1]"),
+		rp(`\[:`, "[0:"),
+		rp(`:]`, ":-1]"),
+	}
+	for key, val := range ops {
+		replacementPairs = append(replacementPairs, rp(" "+val+" ", key))
+	}
+
+	return must(utils.BuildBatchRegex(replacementPairs...)).(*collections.BatchRegex)
+}()
+
+var revertExpressions = func() *collections.BatchRegex {
+	rp := collections.NewReplacementPair
+	backPairs := []collections.ReplacementPair{
+		rp(stringRep, "$"),
+		rp(rangeExpr, "range"),
+		rp(defaultExpr, "default"),
+		rp(funcExpr, "func"),
+		rp(typeExpr, "type"),
+		rp(mapExpr, "map"),
+		rp(dotRep, "."),
+		rp(globalRep, "$."),
+		rp(funcCall, ""),
+		rp(`\$\.slice `, "slice $."),
+	}
+	return must(utils.BuildBatchRegex(backPairs...)).(*collections.BatchRegex)
+}()

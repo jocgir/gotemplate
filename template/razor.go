@@ -26,7 +26,7 @@ func (t *Template) applyRazor(content []byte) (result []byte, changed bool) {
 			})
 		}
 	}
-	content = []byte(strings.Replace(string(content), funcCall, "", -1))
+	//content = []byte(strings.Replace(string(content), funcCall, "", -1))
 	log.Noticef("Generated content\n\n%s\n", color.HiCyanString(String(content).AddLineNumber(0).Str()))
 	return content, true
 }
@@ -36,6 +36,7 @@ var highlight = color.New(color.BgHiBlack, color.FgBlack).SprintFunc()
 // This is indented to simplify the following regular expression for patterns that are repeated several times
 // Warning: The declaration order is important
 var customMetaclass = [][2]string{
+	{"[expr]", `.`},
 	{"function;", `@reduce;(?P<expr>[id]\([sp][expr]*[sp]\))`},
 	{"assign;", `(?P<assign>(?:\$[id][ \t,]*){1,2}:=[sp])`},       // Optional assignment
 	{"index;", `(?P<index>\[[expr]+\])`},                          // Extended index operator that support picky selection using ',' as element separator
@@ -49,21 +50,16 @@ var customMetaclass = [][2]string{
 	{"map_id;", `\p{L}\d_\+\*%#!~`},                               // Id with additional character that could be used to create variables in maps
 }
 
-// Expression (any character that is not a new line, a start of razor expression or a semicolumn)
-var expressionList = []string{`[^\n]`, `[^@\n]`, `[^@;\n]`, `[^@{\n]`, `[^@;{\n]`, fmt.Sprintf(`[^@;{\n'%s]`, "`"), `[\p{L}_\.]`}
-
-const expressionKey = "[expr]"
-
 // Warning: The declaration order is important
 var expressions = [][]interface{}{
 	// Literals
-	{"Protect email", `(\W|^)[\w.!#$%&'*+/=?^_{|}~-]+@[\w-]{1,61}(?:\.[\w-]{1,61})+`, "", replacementFunc(protectEmail)},
+	{"Protect email", `(\W|^)[\w.!#$%&'*+/=?^_{|}~-]+@[\w-]{1,61}(?:\.[\w-]{1,61})+`, "", protectEmail},
 	{"", `@@`, literalAt},
 	{"", `@{{`, literalStart},
-	{"", "(?s)`+.*?`+", "", replacementFunc(protectMultiLineStrings)},
+	{"", "(?s)`+.*?`+", "", protectMultiLineStrings},
 	{"", `@<;`, `{{- $.NEWLINE }}`},
 	{"Auto indent", `(?m)^(?P<before>.*)@reduce;(?:autoIndent|aindent|aIndent)\(`, "@<-spaceIndent(`${before}`, "},
-	{"Auto wrap", `(?m)^(?P<before>.*)@(?P<nl><)?reduce;(?P<func>autoWrap|awrap|aWrap)(?P<context>\(.*)$`, "", replacementFunc(autoWrap)},
+	{"Auto wrap", `(?m)^(?P<before>.*)@(?P<nl><)?reduce;(?P<func>autoWrap|awrap|aWrap)(?P<context>\(.*)$`, "", autoWrap},
 	{`Inline content "@<...>"`, `"@reduce;<(?P<content>.*?)>"`, `"<<@${reduce}(${content})"`},
 	{"Newline expression", `@<`, `{{- $.NEWLINE }}@`},
 
@@ -77,44 +73,41 @@ var expressions = [][]interface{}{
 
 	// Commands
 	{"Foreach", `@reduce;for(?:[sp]each)?[sp]\(`, "@${reduce}range("},
-	{"Single line command - @command (expr) action;", `@reduce;(?P<command>if|with|range)[sp]\([sp]assign;?[sp](?P<expr>[expr]+)[sp]\)[sp](?P<action>[^\n]+?)[sp];`, `{{${reduce1} ${command} ${assign}${expr} ${reduce2}}}${action}{{${reduce1} end ${reduce2}}}`, replacementFunc(expressionParserSkipError), replacementFunc(expressionParser)},
-	{"Single line command - @command (expr) { action }", `(?m)@reduce;(?P<command>if|with|range)[sp]\([sp]assign;?[sp](?P<expr>[expr]+)[sp]\)[sp]{[sp](?P<action>[^\n]+?)}[sp]$`, `{{${reduce1} ${command} ${assign}${expr} ${reduce2}}}${action}{{${reduce1} end ${reduce2}}}`, replacementFunc(expressionParserSkipError), replacementFunc(expressionParser)},
-	{"Command(expr)", `@reduce;(?P<command>if|else[sp]if|block|with|define|range)[sp]\([sp]assign;?[sp](?P<expr>[expr]+)[sp]\)[sp]`, `{{${reduce1} ${command} ${assign}${expr} ${reduce2}}}`, replacementFunc(expressionParserSkipError), replacementFunc(expressionParser)},
+	{"Single line command - @command (expr) action;", `@reduce;(?P<command>if|with|range)[sp]\([sp]assign;?[sp](?P<expr>[expr]+)[sp]\)[sp](?P<action>[^\n]+?)[sp];`, `{{${reduce1} ${command} ${assign}${expr} ${reduce2}}}${action}{{${reduce1} end ${reduce2}}}`, expressionParserSkipError},
+	{"Single line command - @command (expr) { action }", `(?m)@reduce;(?P<command>if|with|range)[sp]\([sp]assign;?[sp](?P<expr>[expr]+)[sp]\)[sp]{[sp](?P<action>[^\n]+?)}[sp]$`, `{{${reduce1} ${command} ${assign}${expr} ${reduce2}}}${action}{{${reduce1} end ${reduce2}}}`, expressionParserSkipError},
+	{"Command(expr)", `@reduce;(?P<command>if|else[sp]if|block|with|define|range)[sp]\([sp]assign;?[sp](?P<expr>[expr]+)[sp]\)[sp]`, `{{${reduce1} ${command} ${assign}${expr} ${reduce2}}}`, expressionParserSkipError},
 	{"else", `@reduce;else`, "{{${reduce1} else ${reduce2}}}"},
 	{"various ends", `@reduce;(?P<command>end[sp](if|range|define|block|with|for[sp]each|for|))endexpr;`, "{{${reduce1} end ${reduce2}}}"},
 
 	// Assignations
-	{"Assign - @$var := value", `(?P<type>@\$)(?P<id>[id])[sp](?P<assign>:=|=)[sp](?P<expr>[expr]+)endexpr;`, ``, replacementFunc(assignExpression)},
-	{"Assign - @var := value", `(?P<type>@[\$\.]?)(?P<id>[flexible_id])[sp](?P<assign>:=|=)[sp](?P<expr>[expr]+)endexpr;`, ``, replacementFunc(assignExpression)},
-	{"Assign - @{var} := value", `(?P<type>@{)(?P<id>[id])}[sp](?P<assign>:=|=)[sp](?P<expr>[expr]+)endexpr;`, ``, replacementFunc(assignExpression)},
-	{"Assign - @{var := expr}", `(?P<type>@{)(?P<id>[id])[sp](?P<assign>:=|=)[sp](?P<expr>[expr]+?)}endexpr;`, ``, replacementFunc(assignExpressionAcceptError)},
-	// TODO Remove in future version
-	{"DEPRECATED Assign - $var := value", `(?:{{-?[sp](?:if|range|with)?[sp](\$[id],)?[sp]|@\(\s*)?(?P<type>\$)(?P<id>[flexible_id])[sp](?P<assign>:=|=)[sp](?P<expr>[expr]+)endexpr;`, ``, replacementFunc(assignExpression)},
+	{"Assign - @var := value", `(?P<type>@(\$|\.|\$\.)?)(?P<id>[flexible_id])[sp](?P<assign>assign_op;)[sp](?P<expr>[expr]+)endexpr;`, ``, assignExpression},
+	{"Assign - @{var} := value", `(?P<type>@{)(?P<id>[id_comp])}[sp](?P<assign>assign_op;)[sp](?P<expr>[expr]+)endexpr;`, ``, assignExpression},
+	{"Assign - @{var := expr}", `(?P<type>@{)(?P<id>[id_comp])[sp](?P<assign>assign_op;)[sp](?P<expr>[expr]+?)}endexpr;`, ``, assignExpressionAcceptError},
 
 	// Function calls
-	{"Function call followed by expression - @func(args...).args", `function;selector;endexpr;`, `@${reduce}((${expr})${selection});`, replacementFunc(expressionParserSkipError)},
-	{"Function call with slice - @func(args...)[...]", `function;index;endexpr;`, `{{${reduce1} ${slicer} (${expr}) ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
-	{"Function call - @func(args...)", `function;endexpr;`, `{{${reduce1} ${expr} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
+	{"Function call followed by expression - @func(args...).args", `function;selector;endexpr;`, `@${reduce}((${expr})${selection});`, expressionParserSkipError},
+	{"Function call with slice - @func(args...)[...]", `function;index;endexpr;`, `{{${reduce1} ${slicer} (${expr}) ${index} ${reduce2}}}`, expressionParserSkipError},
+	{"Function call - @func(args...)", `function;endexpr;`, `{{${reduce1} ${expr} ${reduce2}}}`, expressionParserSkipError},
 	{"Function unmanaged - @func(value | func)", `@reduce;(?P<function>[id])\([sp](?P<args>[expr]+)[sp]\)endexpr;`, `{{${reduce1} ${function} ${args} ${reduce2}}}`},
 
 	// Variables
 	{"Local variables - @{var}", `@reduce;{[sp](?P<name>[\p{L}\d_\.]*)[sp]}(?P<end>endexpr;)`, `@${reduce}($$${name});`},
-	{"Global variables followed by expression", `@reduce;(?P<expr>[idSel]selector;index;?)(?P<end>endexpr;)`, `@${reduce}(${expr});`, replacementFunc(expressionParserSkipError)},
+	{"Global variables followed by expression", `@reduce;(?P<expr>[idSel]selector;index;?)(?P<end>endexpr;)`, `@${reduce}(${expr});`, expressionParserSkipError},
 	{"Context variables - @.var", `@reduce;\.(?P<name>[idSel])endexpr;`, `@${reduce}(.${name})`},
-	{"Global variables with slice - @var[...]", `@reduce;(?P<name>[idSel])index;endexpr;`, `{{${reduce1} ${slicer} $$.${name} ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
-	{"Context variables special with slice", `@reduce;\.(?P<expr>(?P<name>[flexible_id])index;)endexpr;`, `{{${reduce1} ${slicer} (get . "${name}") ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
-	{"Global variables special with slice", `@reduce;(?P<expr>(?P<name>[flexible_id])index;)endexpr;`, `{{${reduce1} ${slicer} (get $$ "${name}") ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
-	{"Local variables with slice", `@reduce;(?P<expr>(?P<name>[\$\.][\p{L}\d_\.]*)index;)endexpr;`, `{{${reduce1} ${slicer} ${name} ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
+	{"Global variables with slice - @var[...]", `@reduce;(?P<name>[idSel])index;endexpr;`, `{{${reduce1} ${slicer} $$.${name} ${index} ${reduce2}}}`, expressionParserSkipError},
+	{"Context variables special with slice", `@reduce;\.(?P<expr>(?P<name>[flexible_id])index;)endexpr;`, `{{${reduce1} ${slicer} (get . "${name}") ${index} ${reduce2}}}`, expressionParserSkipError},
+	{"Global variables special with slice", `@reduce;(?P<expr>(?P<name>[flexible_id])index;)endexpr;`, `{{${reduce1} ${slicer} (get $$ "${name}") ${index} ${reduce2}}}`, expressionParserSkipError},
+	{"Local variables with slice", `@reduce;(?P<expr>(?P<name>[\$\.][\p{L}\d_\.]*)index;)endexpr;`, `{{${reduce1} ${slicer} ${name} ${index} ${reduce2}}}`, expressionParserSkipError},
 	{"Global variables - @var", `@reduce;(?P<name>[idSel])endexpr;`, `{{${reduce1} $$.${name} ${reduce2}}}`},
 	{"Context variables special - @.var", `@reduce;\.(?P<name>[flexible_id])endexpr;`, `{{${reduce1} get . "${name}" ${reduce2}}}`},
 	{"Global variables special - @var", `@reduce;(?P<name>[flexible_id])endexpr;`, `{{${reduce1} get $$ "${name}" ${reduce2}}}`},
 	{"Local variables - @$var or @.var", `@reduce;(?P<name>[\$\.][\p{L}\d_\.]*)endexpr;`, `{{${reduce1} ${name} ${reduce2}}}`},
 
 	// Expressions
-	{"Expression @(var)[...]", `@reduce;(?P<expr>\([sp](?P<name>[idSel])[sp]\)index;)endexpr;`, `{{${reduce1} ${slicer} $$.${name} ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
-	{"Expression @(var)", `@reduce;\([sp](?P<expr>[idSel])[sp]\)endexpr;`, `{{${reduce1} ${expr} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
-	{"Expression @(expr)[...]", `@reduce;\([sp](?P<expr>[expr]+)[sp]\)index;endexpr;`, `{{${reduce1} ${slicer} (${expr}) ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
-	{"Expression @(expr)", `@reduce;\([sp](?P<assign>.*?:= ?)?[sp](?P<expr>[expr]+)[sp]\)endexpr;`, `{{${reduce1} ${assign}${expr} ${reduce2}}}`, replacementFunc(expressionParserSkipError), replacementFunc(expressionParser)},
+	{"Expression @(var)[...]", `@reduce;(?P<expr>\([sp](?P<name>[idSel])[sp]\)index;)endexpr;`, `{{${reduce1} ${slicer} $$.${name} ${index} ${reduce2}}}`, expressionParserSkipError},
+	{"Expression @(var)", `@reduce;\([sp](?P<expr>[idSel])[sp]\)endexpr;`, `{{${reduce1} ${expr} ${reduce2}}}`, expressionParserSkipError},
+	{"Expression @(expr)[...]", `@reduce;\([sp](?P<expr>[expr]+)[sp]\)index;endexpr;`, `{{${reduce1} ${slicer} (${expr}) ${index} ${reduce2}}}`, expressionParserSkipError},
+	{"Expression @(expr)", `@reduce;\([sp](?P<assign>.*?:= ?)?[sp](?P<expr>[expr]+)[sp]\)endexpr;`, `{{${reduce1} ${assign}${expr} ${reduce2}}}`, expressionParserSkipError},
 
 	{"Space eater", `@-`, `{{- "" -}}`},
 
@@ -124,18 +117,16 @@ var expressions = [][]interface{}{
 	// Restoring literals
 	{"", `}}\\\.`, "}}."},
 	{"", literalAt, "@"},
-	{"", fmt.Sprintf(`\x60%s(?P<num>\d+)\x60`, protectString), "", replacementFunc(protectMultiLineStrings)},
+	{"", fmt.Sprintf(`\x60%s(?P<num>\d+)\x60`, protectString), "", protectMultiLineStrings},
 }
 
 var replacementsInit = make(map[string][]replacement)
 
-type replacementFunc func(replacement, string) string
 type replacement struct {
 	name       string
-	expr       string
-	replace    string
 	re         *regexp.Regexp
-	parser     replacementFunc
+	replace    string
+	parser     func(replacement, string) string
 	delimiters []string
 }
 
@@ -150,9 +141,9 @@ func (t *Template) ensureInit() {
 			re = strings.Replace(re, "{{", regexp.QuoteMeta(t.delimiters[0]), -1)
 			re = strings.Replace(re, "}}", regexp.QuoteMeta(t.delimiters[1]), -1)
 			replace := strings.Replace(strings.Replace(strings.Replace(expr[2].(string), "{{", t.delimiters[0], -1), "}}", t.delimiters[1], -1), "@", t.delimiters[2], -1)
-			var exprParser replacementFunc
+			var exprParser func(replacement, string) string
 			if len(expr) >= 4 {
-				exprParser = expr[3].(replacementFunc)
+				exprParser = expr[3].(func(replacement, string) string)
 			}
 
 			// We apply replacements in regular expression to make them regex compliant
@@ -161,26 +152,7 @@ func (t *Template) ensureInit() {
 				re = strings.Replace(re, key, value, -1)
 			}
 
-			subExpressions := []string{re}
-			if strings.Contains(re, expressionKey) {
-				// If regex contains the generic expression token [expr], we generate several expression evaluator
-				// that go from the most generic expression to the most specific one
-				subExpressions = make([]string, len(expressionList))
-				for i := range expressionList {
-					subExpressions[i] = strings.Replace(re, expressionKey, expressionList[i], -1)
-				}
-			}
-
-			for i := range subExpressions {
-				re := regexp.MustCompile(subExpressions[i])
-				replacements = append(replacements, replacement{comment, subExpressions[i], replace, re, exprParser, t.delimiters})
-			}
-
-			if len(subExpressions) > 1 && len(expr) == 5 {
-				// If there is a fallback expression evaluator, we apply it on the first replacement alternative
-				re := regexp.MustCompile(subExpressions[0])
-				replacements = append(replacements, replacement{comment, subExpressions[0], replace, re, expr[4].(replacementFunc), t.delimiters})
-			}
+			replacements = append(replacements, replacement{comment, regexp.MustCompile(re), replace, exprParser, t.delimiters})
 		}
 		replacementsInit[delimiters] = replacements
 	}
@@ -229,7 +201,7 @@ func printDebugInfo(r replacement, content string) {
 		matches = append(matches, key)
 	}
 
-	log.Infof("%s: %s%s", color.YellowString(r.name), r.expr, strings.Join(matches, "\n- "))
+	log.Infof("%s: %s%s", color.YellowString(r.name), r.re.String(), strings.Join(matches, "\n- "))
 	if len(matches) > 0 {
 		ErrPrintln()
 	}

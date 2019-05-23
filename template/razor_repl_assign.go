@@ -40,7 +40,7 @@ func assignExpressionInternal(repl replacement, match string, acceptError bool) 
 	expr := matches["expr"]
 	assign := matches["assign"]
 	if tp == "" || id == "" || expr == "" || assign == "" {
-		log.Errorf("Invalid assign regex %s: %s, must contains type, id and expr", repl.name, repl.expr)
+		log.Errorf("Invalid assign regex %s: %s for '%s', must contains type, id and expr", repl.name, repl.re.String(), match)
 		return match
 	}
 
