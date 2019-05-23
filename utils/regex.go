@@ -1,40 +1,34 @@
 package utils
 
-import "regexp"
+import (
+	"regexp"
+
+	"github.com/coveo/gotemplate/v3/collections"
+)
 
 // MultiMatch returns a map of matching elements from a list of regular expressions (returning the first matching element)
 func MultiMatch(s string, expressions ...*regexp.Regexp) (map[string]string, int) {
-	for i, re := range expressions {
-		if matches := re.FindStringSubmatch(s); len(matches) != 0 {
-			results := make(map[string]string)
-			for i, key := range re.SubexpNames() {
-				if key != "" {
-					results[key] = matches[i]
-				}
-			}
-			return results, i
-		}
-	}
-	return nil, -1
+	return String(s).MultiMatch(expressions...)
 }
 
-// GetRegexGroup cache compiled regex to avoid multiple interpretation of the same regex
-func GetRegexGroup(key string, definitions []string) (result []*regexp.Regexp, err error) {
-	if result, ok := cachedRegex[key]; ok {
-		return result, nil
-	}
+// Imports from collections
+var (
+	GetRegexGroup   = collections.GetRegexGroup
+	BuildBatchRegex = collections.BuildBatchRegex
+)
 
-	result = make([]*regexp.Regexp, len(definitions))
-	for i := range definitions {
-		regex, err := regexp.Compile(definitions[i])
-		if err != nil {
-			return nil, err
-		}
-		result[i] = regex
-	}
-
-	cachedRegex[key] = result
-	return
+// BatchReplace returns the modified string
+func BatchReplace(s string, re *collections.BatchRegex) string {
+	return String(s).BatchReplace(re).Str()
 }
 
-var cachedRegex = map[string][]*regexp.Regexp{}
+// BatchReplaceReversible returns the modified string and all the replacements that occurred
+func BatchReplaceReversible(s string, re *collections.BatchRegex) (string, []collections.Replacement) {
+	result, list := String(s).BatchReplaceReversible(re)
+	return result.Str(), list
+}
+
+// BatchReplaceRevert revert the previously applied changes to restore the string as its original value
+func BatchReplaceRevert(s string, replacements []collections.Replacement) string {
+	return String(s).BatchReplaceRevert(replacements).Str()
+}

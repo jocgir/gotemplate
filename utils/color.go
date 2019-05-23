@@ -74,6 +74,7 @@ const (
 	BgHiWhite
 )
 
+// EOL represents the end of line character depending of the platform
 var EOL = fmt.Sprintln()
 
 //go:generate stringer -type=Attribute -output generated_colors.go
