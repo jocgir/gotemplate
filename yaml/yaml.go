@@ -12,6 +12,7 @@ import (
 
 // Expose yaml public objects
 var (
+	_                     = collections.Register("yaml", 0, Unmarshal)
 	Marshal               = yaml.Marshal
 	NewDecoder            = yaml.NewDecoder
 	NewEncoder            = yaml.NewEncoder
@@ -23,11 +24,6 @@ func (l yamlList) String() string      { result, _ := Marshal(l.AsArray()); retu
 func (d yamlDict) String() string      { result, _ := Marshal(d.AsMap()); return string(result) }
 func (l yamlList) PrettyPrint() string { return l.String() }
 func (d yamlDict) PrettyPrint() string { return d.String() }
-
-var _ = func() int {
-	collections.TypeConverters["yaml"] = Unmarshal
-	return 0
-}()
 
 // Unmarshal calls the native Unmarshal but transform the results
 // to returns Dictionary and GenericList instead of go native collections.

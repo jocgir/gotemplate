@@ -11,6 +11,7 @@ import (
 
 // Expose json public objects
 var (
+	_               = collections.Register("json", -100, Unmarshal)
 	Compact         = json.Compact
 	HTMLEscape      = json.HTMLEscape
 	Indent          = json.Indent
@@ -33,11 +34,6 @@ func (d jsonDict) PrettyPrint() string {
 	result, _ := MarshalIndent(d.AsMap(), "", "  ")
 	return string(result)
 }
-
-var _ = func() int {
-	collections.TypeConverters["!json"] = Unmarshal
-	return 0
-}()
 
 // Unmarshal calls the native Unmarshal but transform the results
 // to returns Dictionary and GenerecList instead of go native collections.

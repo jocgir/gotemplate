@@ -326,7 +326,7 @@ func TestData(t *testing.T) {
 		{"Invalid", "@typeOf(data(`\"a\": 1, \"b\": 2`))", `"<RUN_ERROR>"`, fmt.Errorf("")},
 		{"Json", "@typeOf(data(`{\"a\": 1, \"b\": 2}`))", "json.jsonDict", nil},
 		{"Yaml", "@typeOf(data(`a: 1\nb: 2`))", "yaml.yamlDict", nil},
-		{"Flexible Hcl", "@typeOf(data(`a = 1 b = hello`))", "yaml.yamlDict", nil}, // TODO: Change that to hcl
+		{"Flexible Hcl", "@typeOf(data(`a = 1 b = hello`))", "hcl.hclDict", nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

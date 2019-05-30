@@ -1,0 +1,8 @@
+int: 10
+string: Hello
+list:
+- a
+- b
+struct:
+    a: 1
+    b: y

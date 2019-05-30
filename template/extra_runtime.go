@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/coveo/gotemplate/v3/collections"
+	"github.com/coveo/gotemplate/v3/data"
 	"github.com/coveo/gotemplate/v3/hcl"
 	"github.com/coveo/gotemplate/v3/utils"
 	"github.com/fatih/color"
@@ -197,7 +198,7 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 		}
 		if reflect.TypeOf(defaultArgs[0]).Kind() == reflect.String {
 			var configFromString interface{}
-			if err = collections.ConvertData(fmt.Sprint(defaultArgs[0]), &configFromString); err != nil {
+			if err = data.Convert(fmt.Sprint(defaultArgs[0]), &configFromString); err != nil {
 				err = fmt.Errorf("Function configuration must be valid type: %v\n%v", defaultArgs[0], err)
 				return
 			}
@@ -276,7 +277,7 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 				switch arg := args[0].(type) {
 				case string:
 					var out interface{}
-					if collections.ConvertData(arg, &out) == nil {
+					if data.Convert(arg, &out) == nil {
 						args[0] = out
 					}
 				}

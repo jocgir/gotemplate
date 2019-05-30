@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 
 	"github.com/coveo/gotemplate/v3/collections"
+	"github.com/coveo/gotemplate/v3/data"
 	"github.com/coveo/gotemplate/v3/template"
 )
 
@@ -32,8 +32,8 @@ func createContext(varsFiles []string, namedVars []string, mode string, ignoreMi
 	}
 
 	for i := range namedVars {
-		data := collections.CreateDictionary().AsMap()
-		if err := collections.ConvertData(namedVars[i], &data); err != nil {
+		dict := collections.CreateDictionary().AsMap()
+		if err := data.UnmarshalString(namedVars[i], &dict); err != nil {
 			var fd fileDef
 			fd.name, fd.value = collections.Split2(namedVars[i], "=")
 			if fd.value == "" {
@@ -42,13 +42,13 @@ func createContext(varsFiles []string, namedVars []string, mode string, ignoreMi
 			nameValuePairs = append(nameValuePairs, fd)
 			continue
 		}
-		if len(data) == 0 && strings.Contains(namedVars[i], "=") {
+		if len(dict) == 0 && strings.Contains(namedVars[i], "=") {
 			// The hcl converter consider "value=" as an empty map instead of empty value in a map
 			// we handle it
 			name, value := collections.Split2(namedVars[i], "=")
-			data[name] = value
+			dict[name] = value
 		}
-		for key, value := range data {
+		for key, value := range dict {
 			nameValuePairs = append(nameValuePairs, fileDef{key, value, false})
 		}
 	}
@@ -60,7 +60,7 @@ func createContext(varsFiles []string, namedVars []string, mode string, ignoreMi
 		if filename != "" {
 			loader = func(filename string) (collections.IDictionary, error) {
 				var content interface{}
-				loadErr := collections.LoadData(filename, &content)
+				loadErr := data.Load(filename, &content)
 				_, isFileErr := loadErr.(*os.PathError)
 				if loadErr == nil {
 					if nv.name == "" && !nv.unnamed {
@@ -78,7 +78,7 @@ func createContext(varsFiles []string, namedVars []string, mode string, ignoreMi
 				}
 
 				// Finally, we just try to convert the data with the converted value
-				if err := collections.ConvertData(filename, &content); err != nil {
+				if err := data.Convert(filename, &content); err != nil {
 					content = nv.value
 				}
 
@@ -96,7 +96,7 @@ func createContext(varsFiles []string, namedVars []string, mode string, ignoreMi
 			if filename == "-" {
 				loader = func(filename string) (result collections.IDictionary, err error) {
 					var content interface{}
-					if err = collections.ConvertData(readStdin(), &content); err != nil {
+					if err = data.Convert(readStdin(), &content); err != nil {
 						return nil, err
 					}
 					if nv.name == "" {
@@ -126,7 +126,7 @@ func createContext(varsFiles []string, namedVars []string, mode string, ignoreMi
 				template.Log.Infof("Import: %s not found. Skipping the import", filename)
 				continue
 			} else {
-				return nil, fmt.Errorf("Error %v while loading vars file %s", nv.value, err)
+				return nil, err
 			}
 		}
 		if context == nil {

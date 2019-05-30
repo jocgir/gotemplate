@@ -8,10 +8,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/coveo/gotemplate/v3/collections"
+	"github.com/coveo/gotemplate/v3/data"
 	"github.com/coveo/gotemplate/v3/hcl"
 	"github.com/coveo/gotemplate/v3/json"
 	"github.com/coveo/gotemplate/v3/utils"
-	"github.com/coveo/gotemplate/v3/xml"
+	xml "github.com/coveo/gotemplate/v3/xml"
 	"github.com/coveo/gotemplate/v3/yaml"
 )
 
@@ -62,7 +63,7 @@ var dataFuncsBase = dictionary{
 }
 
 var dataFuncsConversion = dictionary{
-	"toBash":         collections.ToBash,
+	"toBash":         data.ToBash,
 	"toHcl":          toHCL,
 	"toInternalHcl":  toInternalHCL,
 	"toJson":         toJSON,
@@ -228,7 +229,7 @@ func (t *Template) addDataFuncs() {
 		"data": t.dataConverter,
 		"hcl":  t.hclConverter,
 		"json": t.jsonConverter,
-		//"xml":  t.xmlConverter,
+		"xml":  t.xmlConverter,
 		"yaml": t.yamlConverter,
 	}, dataConversion, options)
 	t.optionsEnabled[Data] = true
@@ -448,7 +449,7 @@ func (t Template) hclConverter(source interface{}, context ...interface{}) (resu
 func (t Template) dataConverter(source interface{}, context ...interface{}) (result interface{}, err error) {
 	return t.templateConverter(
 		func(in interface{}) ([]byte, error) { return []byte(fmt.Sprint(in)), nil },
-		func(bs []byte, out interface{}) error { return collections.ConvertData(string(bs), out) },
+		func(bs []byte, out interface{}) error { return data.Unmarshal(bs, out) },
 		source, context...)
 }
 

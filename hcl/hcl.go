@@ -13,6 +13,7 @@ import (
 
 // Expose hcl public objects
 var (
+	_            = collections.Register("hcl", 0, Unmarshal)
 	Decode       = hcl.Decode
 	DecodeObject = hcl.DecodeObject
 	Parse        = hcl.Parse
@@ -45,11 +46,6 @@ func (d hclDict) PrettyPrint() string {
 	result, _ := MarshalIndent(d.AsMap(), "", "  ")
 	return string(result)
 }
-
-var _ = func() int {
-	collections.TypeConverters["hcl"] = Unmarshal
-	return 0
-}()
 
 // Unmarshal adds support to single array and struct representation
 func Unmarshal(bs []byte, out interface{}) (err error) {

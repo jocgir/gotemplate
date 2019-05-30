@@ -1,4 +1,4 @@
-package xml
+package customxml
 
 import (
 	"encoding/xml"
@@ -85,5 +85,5 @@ type (
 
 var needConversionImpl = implementation.NeedConversion
 
-//go:generate genny -pkg=xml -in=../collections/implementation/generic.go -out=generated_impl.go gen "ListTypeName=List DictTypeName=Dictionary base=xml"
-//go:generate genny -pkg=xml -in=../collections/implementation/generic_test.go -out=generated_test.go gen "base=xml"
+//go:generate genny -pkg=customxml -in=../collections/implementation/generic.go -out=generated_impl.go gen "ListTypeName=List DictTypeName=Dictionary base=xml"
+//go:generate genny -pkg=customxml -in=../collections/implementation/generic_test.go -out=generated_test.go gen "base=xml"
