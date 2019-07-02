@@ -9,7 +9,7 @@ import (
 )
 
 type iList = collections.IGenericList
-type list = implementation.ListTypeName
+type list = implementation.List
 
 func TestFormatList(t *testing.T) {
 	type args struct {

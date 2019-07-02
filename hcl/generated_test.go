@@ -14,16 +14,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var strFixture = hclList(hclListHelper.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
+var strFixture = hclList(lh.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
 
 func Test_list_Append(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name   string
-		l      hclIList
+		l      IGenericList
 		values []interface{}
-		want   hclIList
+		want   IGenericList
 	}{
 		{"Empty", hclList{}, []interface{}{1, 2, 3}, hclList{1, 2, 3}},
 		{"List of int", hclList{1, 2, 3}, []interface{}{4, 5}, hclList{1, 2, 3, 4, 5}},
@@ -44,9 +44,9 @@ func Test_list_Prepend(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		l      hclIList
+		l      IGenericList
 		values []interface{}
-		want   hclIList
+		want   IGenericList
 	}{
 		{"Empty", hclList{}, []interface{}{1, 2, 3}, hclList{1, 2, 3}},
 		{"List of int", hclList{1, 2, 3}, []interface{}{4, 5}, hclList{4, 5, 1, 2, 3}},
@@ -109,10 +109,10 @@ func Test_list_Capacity(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    hclIList
+		l    IGenericList
 		want int
 	}{
-		{"Empty List with 100 spaces", hclListHelper.CreateList(0, 100), 100},
+		{"Empty List with 100 spaces", lh.CreateList(0, 100), 100},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -132,7 +132,7 @@ func Test_list_Clone(t *testing.T) {
 	tests := []struct {
 		name string
 		l    hclList
-		want hclIList
+		want IGenericList
 	}{
 		{"Empty List", hclList{}, hclList{}},
 		{"List of int", hclList{1, 2, 3}, hclList{1, 2, 3}},
@@ -204,7 +204,7 @@ func Test_CreateList(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []int
-		want    hclIList
+		want    IGenericList
 		wantErr bool
 	}{
 		{"Empty", nil, hclList{}, false},
@@ -216,7 +216,7 @@ func Test_CreateList(t *testing.T) {
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() { err = errors.Trap(err, recover()) }()
-			got := hclListHelper.CreateList(tt.args...)
+			got := lh.CreateList(tt.args...)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CreateList():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
 			}
@@ -237,12 +237,12 @@ func Test_list_Create(t *testing.T) {
 		name string
 		l    hclList
 		args []int
-		want hclIList
+		want IGenericList
 	}{
 		{"Empty", nil, nil, hclList{}},
 		{"Existing List", hclList{1, 2}, nil, hclList{}},
 		{"With Empty spaces", hclList{1, 2}, []int{5}, hclList{nil, nil, nil, nil, nil}},
-		{"With Capacity", hclList{1, 2}, []int{0, 5}, hclListHelper.CreateList(0, 5)},
+		{"With Capacity", hclList{1, 2}, []int{0, 5}, lh.CreateList(0, 5)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -264,7 +264,7 @@ func Test_list_New(t *testing.T) {
 		name string
 		l    hclList
 		args []interface{}
-		want hclIList
+		want IGenericList
 	}{
 		{"Empty", nil, nil, hclList{}},
 		{"Existing List", hclList{1, 2}, nil, hclList{}},
@@ -290,7 +290,7 @@ func Test_list_CreateDict(t *testing.T) {
 		name    string
 		l       hclList
 		args    []int
-		want    hclIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, nil, hclDict{}, false},
@@ -505,7 +505,7 @@ func Test_list_Reverse(t *testing.T) {
 	tests := []struct {
 		name string
 		l    hclList
-		want hclIList
+		want IGenericList
 	}{
 		{"Empty List", hclList{}, hclList{}},
 		{"List of int", hclList{1, 2, 3}, hclList{3, 2, 1}},
@@ -530,9 +530,9 @@ func Test_list_Set(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		l       hclIList
+		l       IGenericList
 		args    args
-		want    hclIList
+		want    IGenericList
 		wantErr bool
 	}{
 		{"Empty", hclList{}, args{2, 1}, hclList{nil, nil, 1}, false},
@@ -570,9 +570,9 @@ var mapFixture = map[string]interface{}{
 	},
 }
 
-var dictFixture = hclDict(hclDictHelper.AsDictionary(mapFixture).AsMap())
+var dictFixture = hclDict(dh.AsDictionary(mapFixture).AsMap())
 
-func dumpKeys(t *testing.T, d1, d2 hclIDict) {
+func dumpKeys(t *testing.T, d1, d2 IDictionary) {
 	t.Parallel()
 
 	for key := range d1.AsMap() {
@@ -612,7 +612,7 @@ func Test_dict_Clone(t *testing.T) {
 		name string
 		d    hclDict
 		keys []interface{}
-		want hclIDict
+		want IDictionary
 	}{
 		{"Nil", nil, nil, hclDict{}},
 		{"Empty", hclDict{}, nil, hclDict{}},
@@ -649,7 +649,7 @@ func Test_HclDict_CreateList(t *testing.T) {
 		name         string
 		d            hclDict
 		args         []int
-		want         hclIList
+		want         IGenericList
 		wantLen      int
 		wantCapacity int
 	}{
@@ -680,7 +680,7 @@ func Test_dict_Create(t *testing.T) {
 		name    string
 		d       hclDict
 		args    []int
-		want    hclIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, nil, hclDict{}, false},
@@ -741,7 +741,7 @@ func Test_dict_Delete(t *testing.T) {
 		name    string
 		d       hclDict
 		args    args
-		want    hclIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, args{}, hclDict{}, true},
@@ -773,7 +773,7 @@ func Test_dict_Flush(t *testing.T) {
 		name string
 		d    hclDict
 		keys []interface{}
-		want hclIDict
+		want IDictionary
 	}{
 		{"Empty", nil, nil, hclDict{}},
 		{"Map", dictFixture, nil, hclDict{}},
@@ -803,7 +803,7 @@ func Test_dict_Keys(t *testing.T) {
 	tests := []struct {
 		name string
 		d    hclDict
-		want hclIList
+		want IGenericList
 	}{
 		{"Empty", nil, hclList{}},
 		{"Map", dictFixture, hclList{String("float"), String("int"), String("list"), String("listInt"), String("map"), String("mapInt"), String("string")}},
@@ -854,23 +854,23 @@ func Test_dict_Merge(t *testing.T) {
 		},
 	}
 	type args struct {
-		hclDict hclIDict
-		dicts   []hclIDict
+		hclDict IDictionary
+		dicts   []IDictionary
 	}
 	tests := []struct {
 		name string
 		d    hclDict
 		args args
-		want hclIDict
+		want IDictionary
 	}{
-		{"Empty", nil, args{nil, []hclIDict{}}, hclDict{}},
-		{"Add map to empty", nil, args{dictFixture, []hclIDict{}}, dictFixture},
-		{"Add map to same map", dictFixture, args{dictFixture, []hclIDict{}}, dictFixture},
-		{"Add empty to map", dictFixture, args{nil, []hclIDict{}}, dictFixture},
-		{"Add new1 to map", dictFixture, args{adding1, []hclIDict{}}, dictFixture.Clone().Merge(adding1)},
-		{"Add new2 to map", dictFixture, args{adding2, []hclIDict{}}, dictFixture.Clone().Merge(adding2)},
-		{"Add new1 & new2 to map", dictFixture, args{adding1, []hclIDict{adding2}}, dictFixture.Clone().Merge(adding1, adding2)},
-		{"Add new1 & new2 to map", dictFixture, args{adding1, []hclIDict{adding2}}, dictFixture.Clone().Merge(adding1).Merge(adding2)},
+		{"Empty", nil, args{nil, []IDictionary{}}, hclDict{}},
+		{"Add map to empty", nil, args{dictFixture, []IDictionary{}}, dictFixture},
+		{"Add map to same map", dictFixture, args{dictFixture, []IDictionary{}}, dictFixture},
+		{"Add empty to map", dictFixture, args{nil, []IDictionary{}}, dictFixture},
+		{"Add new1 to map", dictFixture, args{adding1, []IDictionary{}}, dictFixture.Clone().Merge(adding1)},
+		{"Add new2 to map", dictFixture, args{adding2, []IDictionary{}}, dictFixture.Clone().Merge(adding2)},
+		{"Add new1 & new2 to map", dictFixture, args{adding1, []IDictionary{adding2}}, dictFixture.Clone().Merge(adding1, adding2)},
+		{"Add new1 & new2 to map", dictFixture, args{adding1, []IDictionary{adding2}}, dictFixture.Clone().Merge(adding1).Merge(adding2)},
 	}
 	for _, tt := range tests {
 		go t.Run(tt.name, func(t *testing.T) {
@@ -890,7 +890,7 @@ func Test_dict_Values(t *testing.T) {
 	tests := []struct {
 		name string
 		d    hclDict
-		want hclIList
+		want IGenericList
 	}{
 		{"Empty", nil, hclList{}},
 		{"Map", dictFixture, hclList{1.23, 123, hclList{1, "two"}, hclList{1, 2, 3}, hclDict{"sub1": 1, "sub2": "two"}, hclDict{"1": 1, "2": "two"}, "Foo bar"}},
@@ -912,7 +912,7 @@ func Test_dict_Pop(t *testing.T) {
 		d          hclDict
 		args       []interface{}
 		want       interface{}
-		wantObject hclIDict
+		wantObject IDictionary
 	}{
 		{"Nil", dictFixture, nil, nil, dictFixture},
 		{"Pop one element", dictFixture, []interface{}{"float"}, 1.23, dictFixture.Omit("float")},
@@ -944,7 +944,7 @@ func Test_dict_Add(t *testing.T) {
 		name string
 		d    hclDict
 		args args
-		want hclIDict
+		want IDictionary
 	}{
 		{"Empty", nil, args{"A", 1}, hclDict{"A": 1}},
 		{"With element", hclDict{"A": 1}, args{"A", 2}, hclDict{"A": hclList{1, 2}}},
@@ -971,7 +971,7 @@ func Test_dict_Set(t *testing.T) {
 		name string
 		d    hclDict
 		args args
-		want hclIDict
+		want IDictionary
 	}{
 		{"Empty", nil, args{"A", 1}, hclDict{"A": 1}},
 		{"With element", hclDict{"A": 1}, args{"A", 2}, hclDict{"A": 2}},
@@ -992,7 +992,7 @@ func Test_dict_Transpose(t *testing.T) {
 	tests := []struct {
 		name string
 		d    hclDict
-		want hclIDict
+		want IDictionary
 	}{
 		{"Empty", nil, hclDict{}},
 		{"Base", hclDict{"A": 1}, hclDict{"1": String("A")}},
@@ -1055,12 +1055,12 @@ func Test_Hcl_TypeName(t *testing.T) {
 func Test_Hcl_GetHelper(t *testing.T) {
 	t.Run("list", func(t *testing.T) {
 		gotD, gotL := hclList{}.GetHelpers()
-		assert.Equal(t, gotD.CreateDictionary().TypeName(), hclDictHelper.CreateDictionary().TypeName())
-		assert.Equal(t, gotL.CreateList().TypeName(), hclListHelper.CreateList().TypeName())
+		assert.Equal(t, gotD.CreateDictionary().TypeName(), dh.CreateDictionary().TypeName())
+		assert.Equal(t, gotL.CreateList().TypeName(), lh.CreateList().TypeName())
 	})
 	t.Run("dict", func(t *testing.T) {
 		gotD, gotL := hclDict{}.GetHelpers()
-		assert.Equal(t, gotD.CreateDictionary().TypeName(), hclDictHelper.CreateDictionary().TypeName())
-		assert.Equal(t, gotL.CreateList().TypeName(), hclListHelper.CreateList().TypeName())
+		assert.Equal(t, gotD.CreateDictionary().TypeName(), dh.CreateDictionary().TypeName())
+		assert.Equal(t, gotL.CreateList().TypeName(), lh.CreateList().TypeName())
 	})
 }

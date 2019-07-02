@@ -10,141 +10,109 @@ import (
 	"github.com/coveooss/gotemplate/v3/stringclass"
 )
 
-// List implementation of IGenericList for hclList
-type List = hclList
-type hclIList = collections.IGenericList
-type hclList []interface{}
-
-func (l hclList) AsArray() []interface{} { return []interface{}(l) }
-func (l hclList) Cap() int               { return cap(l) }
-func (l hclList) Capacity() int          { return cap(l) }
-func (l hclList) Clone() hclIList        { return hclListHelper.Clone(l) }
-func (l hclList) Contains(values ...interface{}) bool {
-	return hclListHelper.Contains(l, values...)
-}
-func (l hclList) Count() int                  { return len(l) }
-func (l hclList) Create(args ...int) hclIList { return hclListHelper.CreateList(args...) }
-func (l hclList) CreateDict(args ...int) hclIDict {
-	return hclListHelper.CreateDictionary(args...)
-}
-func (l hclList) First() interface{} { return hclListHelper.GetIndexes(l, 0) }
-func (l hclList) Get(indexes ...int) interface{} {
-	return hclListHelper.GetIndexes(l, indexes...)
-}
-func (l hclList) Has(values ...interface{}) bool   { return l.Contains(values...) }
-func (l hclList) Join(sep interface{}) String      { return l.StringArray().Join(sep) }
-func (l hclList) Last() interface{}                { return hclListHelper.GetIndexes(l, len(l)-1) }
-func (l hclList) Len() int                         { return len(l) }
-func (l hclList) New(args ...interface{}) hclIList { return hclListHelper.NewList(args...) }
-func (l hclList) Reverse() hclIList                { return hclListHelper.Reverse(l) }
-func (l hclList) StringArray() StringArray         { return hclListHelper.GetStringArray(l) }
-func (l hclList) Strings() []string                { return hclListHelper.GetStrings(l) }
-func (l hclList) TypeName() String                 { return "Hcl" }
-func (l hclList) Unique() hclIList                 { return hclListHelper.Unique(l) }
-
-func (l hclList) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
-	return hclDictHelper, hclListHelper
-}
-
-func (l hclList) Append(values ...interface{}) hclIList {
-	return hclListHelper.Add(l, false, values...)
-}
-
-func (l hclList) Intersect(values ...interface{}) hclIList {
-	return hclListHelper.Intersect(l, values...)
-}
-
-func (l hclList) Pop(indexes ...int) (interface{}, hclIList) {
-	if len(indexes) == 0 {
-		indexes = []int{len(l) - 1}
-	}
-	return l.Get(indexes...), l.Remove(indexes...)
-}
-
-func (l hclList) Prepend(values ...interface{}) hclIList {
-	return hclListHelper.Add(l, true, values...)
-}
-
-func (l hclList) Remove(indexes ...int) hclIList {
-	return hclListHelper.Remove(l, indexes...)
-}
-
-func (l hclList) Set(i int, v interface{}) (hclIList, error) {
-	return hclListHelper.SetIndex(l, i, v)
-}
-
-func (l hclList) Union(values ...interface{}) hclIList {
-	return hclListHelper.Add(l, false, values...).Unique()
-}
-
-func (l hclList) Without(values ...interface{}) hclIList {
-	return hclListHelper.Without(l, values...)
-}
-
-// Dictionary implementation of IDictionary for hclDict
-type Dictionary = hclDict
-type hclIDict = collections.IDictionary
-type hclDict map[string]interface{}
-
-func (d hclDict) Add(key, v interface{}) hclIDict     { return hclDictHelper.Add(d, key, v) }
-func (d hclDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
-func (d hclDict) Clone(keys ...interface{}) hclIDict  { return hclDictHelper.Clone(d, keys) }
-func (d hclDict) Count() int                          { return len(d) }
-func (d hclDict) Create(args ...int) hclIDict         { return hclListHelper.CreateDictionary(args...) }
-func (d hclDict) CreateList(args ...int) hclIList     { return hclHelper.CreateList(args...) }
-func (d hclDict) Flush(keys ...interface{}) hclIDict  { return hclDictHelper.Flush(d, keys) }
-func (d hclDict) Get(keys ...interface{}) interface{} { return hclDictHelper.Get(d, keys) }
-func (d hclDict) GetKeys() hclIList                   { return hclDictHelper.GetKeys(d) }
-func (d hclDict) GetValues() hclIList                 { return hclDictHelper.GetValues(d) }
-func (d hclDict) Has(keys ...interface{}) bool        { return hclDictHelper.Has(d, keys) }
-func (d hclDict) KeysAsString() StringArray           { return hclDictHelper.KeysAsString(d) }
-func (d hclDict) Len() int                            { return len(d) }
-func (d hclDict) Native() interface{}                 { return must(collections.MarshalGo(d)) }
-func (d hclDict) Pop(keys ...interface{}) interface{} { return hclDictHelper.Pop(d, keys) }
-func (d hclDict) Set(key, v interface{}) hclIDict     { return hclDictHelper.Set(d, key, v) }
-func (d hclDict) Transpose() hclIDict                 { return hclDictHelper.Transpose(d) }
-func (d hclDict) TypeName() String                    { return "Hcl" }
-
-func (d hclDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
-	return hclDictHelper, hclListHelper
-}
-
-func (d hclDict) Default(key, defVal interface{}) interface{} {
-	return hclDictHelper.Default(d, key, defVal)
-}
-
-func (d hclDict) Delete(key interface{}, otherKeys ...interface{}) (hclIDict, error) {
-	return hclDictHelper.Delete(d, append([]interface{}{key}, otherKeys...))
-}
-
-func (d hclDict) Merge(dict hclIDict, otherDicts ...hclIDict) hclIDict {
-	return hclDictHelper.Merge(d, append([]hclIDict{dict}, otherDicts...))
-}
-
-func (d hclDict) Omit(key interface{}, otherKeys ...interface{}) hclIDict {
-	return hclDictHelper.Omit(d, append([]interface{}{key}, otherKeys...))
-}
-
-// Generic helpers to simplify physical implementation
-func hclListConvert(list hclIList) hclIList { return hclList(list.AsArray()) }
-func hclDictConvert(dict hclIDict) hclIDict { return hclDict(dict.AsMap()) }
-func needConversion(object interface{}, strict bool) bool {
-	return needConversionImpl(object, strict, "Hcl")
-}
-
-var hclHelper = helperBase{ConvertList: hclListConvert, ConvertDict: hclDictConvert, NeedConversion: needConversion}
-var hclListHelper = helperList{BaseHelper: hclHelper}
-var hclDictHelper = helperDict{BaseHelper: hclHelper}
-
-// DictionaryHelper gives public access to the basic dictionary functions
-var DictionaryHelper collections.IDictionaryHelper = hclDictHelper
-
-// GenericListHelper gives public access to the basic list functions
-var GenericListHelper collections.IListHelper = hclListHelper
+// SetAsDefault configure the current implementation as default list & dictionary manager.
+func SetAsDefault() { collections.ListHelper, collections.DictionaryHelper = lh, dh }
 
 type (
+	itf = interface{}
+
+	// List is the hcl implementation of IGenericList
+	List    = hclList
+	hclList []itf
+	il      = IGenericList
+	bl      = hclList
+
+	// Dictionary is the hcl implementation of IDictionary
+	Dictionary = hclDict
+	hclDict    map[string]itf
+	id         = IDictionary
+	bd         = hclDict
+)
+
+// List implementation
+func (l bl) Append(values ...itf) il                { return lh.Add(l, false, values...) }
+func (l bl) AsArray() []itf                         { return []itf(l) }
+func (l bl) Cap() int                               { return cap(l) }
+func (l bl) Capacity() int                          { return cap(l) }
+func (l bl) Clone() il                              { return lh.Clone(l) }
+func (l bl) Contains(values ...itf) bool            { return lh.Contains(l, values...) }
+func (l bl) Count() int                             { return len(l) }
+func (l bl) Create(args ...int) il                  { return lh.CreateList(args...) }
+func (l bl) CreateDict(args ...int) id              { return lh.CreateDictionary(args...) }
+func (l bl) First() itf                             { return lh.GetIndexes(l, 0) }
+func (l bl) Get(indexes ...int) itf                 { return lh.GetIndexes(l, indexes...) }
+func (l bl) GetHelpers() (IDictHelper, IListHelper) { return dh, lh }
+func (l bl) Has(values ...itf) bool                 { return l.Contains(values...) }
+func (l bl) Intersect(values ...itf) il             { return lh.Intersect(l, values...) }
+func (l bl) Join(sep itf) String                    { return l.StringArray().Join(sep) }
+func (l bl) Last() itf                              { return lh.GetIndexes(l, len(l)-1) }
+func (l bl) Len() int                               { return len(l) }
+func (l bl) New(args ...itf) il                     { return lh.NewList(args...) }
+func (l bl) Pop(indexes ...int) (itf, il)           { return lh.Pop(l, indexes...) }
+func (l bl) Prepend(values ...itf) il               { return lh.Add(l, true, values...) }
+func (l bl) Remove(indexes ...int) il               { return lh.Remove(l, indexes...) }
+func (l bl) Reverse() il                            { return lh.Reverse(l) }
+func (l bl) Set(i int, v itf) (il, error)           { return lh.SetIndex(l, i, v) }
+func (l bl) StringArray() StringArray               { return lh.GetStringArray(l) }
+func (l bl) Strings() []string                      { return lh.GetStrings(l) }
+func (l bl) TypeName() String                       { return "Hcl" }
+func (l bl) Union(values ...itf) il                 { return lh.Add(l, false, values...).Unique() }
+func (l bl) Unique() il                             { return lh.Unique(l) }
+func (l bl) Without(values ...itf) il               { return lh.Without(l, values...) }
+
+// Dictionary implementation
+func (d bd) Add(key, v itf) id                         { return dh.Add(d, key, v) }
+func (d bd) AsMap() map[string]itf                     { return (map[string]itf)(d) }
+func (d bd) Clone(keys ...itf) id                      { return dh.Clone(d, keys) }
+func (d bd) Count() int                                { return len(d) }
+func (d bd) Create(args ...int) id                     { return lh.CreateDictionary(args...) }
+func (d bd) CreateList(args ...int) il                 { return dh.CreateList(args...) }
+func (d bd) Default(key, defVal itf) itf               { return dh.Default(d, key, defVal) }
+func (d bd) Delete(first itf, rest ...itf) (id, error) { return dh.Delete(d, first, rest) }
+func (d bd) Flush(keys ...itf) id                      { return dh.Flush(d, keys) }
+func (d bd) Get(keys ...itf) itf                       { return dh.Get(d, keys) }
+func (d bd) GetHelpers() (IDictHelper, IListHelper)    { return dh, lh }
+func (d bd) GetKeys() il                               { return dh.GetKeys(d) }
+func (d bd) GetValues() il                             { return dh.GetValues(d) }
+func (d bd) Has(keys ...itf) bool                      { return dh.Has(d, keys) }
+func (d bd) KeysAsString() StringArray                 { return dh.KeysAsString(d) }
+func (d bd) Len() int                                  { return len(d) }
+func (d bd) Merge(first id, rest ...id) id             { return dh.Merge(d, first, rest) }
+func (d bd) Native() itf                               { return must(collections.MarshalGo(d)) }
+func (d bd) Omit(first itf, rest ...itf) id            { return dh.Omit(d, first, rest) }
+func (d bd) Pop(keys ...itf) itf                       { return dh.Pop(d, keys) }
+func (d bd) Set(key, v itf) id                         { return dh.Set(d, key, v) }
+func (d bd) Transpose() id                             { return dh.Transpose(d) }
+func (d bd) TypeName() String                          { return "Hcl" }
+
+// Generic helpers to simplify physical implementation
+var (
+	helper = helperBase{
+		ConvertList:    func(list il) il { return hclList(list.AsArray()) },
+		ConvertDict:    func(dict id) id { return hclDict(dict.AsMap()) },
+		NeedConversion: func(object itf, strict bool) bool { return needConversionImpl(object, strict, "Hcl") },
+	}
+	lh = helperList{BaseHelper: helper}
+	dh = helperDict{BaseHelper: helper}
+)
+
+// Imported types
+type (
+	// IGenericList is imported from collections
+	IGenericList = collections.IGenericList
+
+	// IListHelper is imported from collections
+	IListHelper = collections.IListHelper
+
+	// IDictionary is imported from collections
+	IDictionary = collections.IDictionary
+
+	// IDictHelper is imported from collections
+	IDictHelper = collections.IDictionaryHelper
+
 	// String is imported from stringclass
 	String = stringclass.String
+
 	// StringArray is imported from stringclass
 	StringArray = stringclass.StringArray
 )
@@ -152,6 +120,6 @@ type (
 // Imported functions
 var (
 	iif           = collections.IIf
-	TrimmedString = stringclass.TrimmedString
 	must          = errors.Must
+	TrimmedString = stringclass.TrimmedString
 )

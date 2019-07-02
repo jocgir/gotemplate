@@ -4,13 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/collections/implementation"
 )
 
 func TestMergeDictionaries(t *testing.T) {
-	collections.DictionaryHelper = implementation.DictionaryHelper
-	collections.ListHelper = implementation.GenericListHelper
+	implementation.SetAsDefault()
 	map1 := map[string]interface{}{
 		"int":         1000,
 		"Add1Int":     1,

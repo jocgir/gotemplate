@@ -11,16 +11,16 @@ import (
 	"github.com/coveooss/gotemplate/v3/errors"
 )
 
-var strFixture = baseList(baseListHelper.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
+var strFixture = baseList(lh.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
 
 func Test_list_Append(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name   string
-		l      baseIList
+		l      IGenericList
 		values []interface{}
-		want   baseIList
+		want   IGenericList
 	}{
 		{"Empty", baseList{}, []interface{}{1, 2, 3}, baseList{1, 2, 3}},
 		{"List of int", baseList{1, 2, 3}, []interface{}{4, 5}, baseList{1, 2, 3, 4, 5}},
@@ -41,9 +41,9 @@ func Test_list_Prepend(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		l      baseIList
+		l      IGenericList
 		values []interface{}
-		want   baseIList
+		want   IGenericList
 	}{
 		{"Empty", baseList{}, []interface{}{1, 2, 3}, baseList{1, 2, 3}},
 		{"List of int", baseList{1, 2, 3}, []interface{}{4, 5}, baseList{4, 5, 1, 2, 3}},
@@ -106,10 +106,10 @@ func Test_list_Capacity(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    baseIList
+		l    IGenericList
 		want int
 	}{
-		{"Empty List with 100 spaces", baseListHelper.CreateList(0, 100), 100},
+		{"Empty List with 100 spaces", lh.CreateList(0, 100), 100},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -129,7 +129,7 @@ func Test_list_Clone(t *testing.T) {
 	tests := []struct {
 		name string
 		l    baseList
-		want baseIList
+		want IGenericList
 	}{
 		{"Empty List", baseList{}, baseList{}},
 		{"List of int", baseList{1, 2, 3}, baseList{1, 2, 3}},
@@ -201,7 +201,7 @@ func Test_CreateList(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []int
-		want    baseIList
+		want    IGenericList
 		wantErr bool
 	}{
 		{"Empty", nil, baseList{}, false},
@@ -213,7 +213,7 @@ func Test_CreateList(t *testing.T) {
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() { err = errors.Trap(err, recover()) }()
-			got := baseListHelper.CreateList(tt.args...)
+			got := lh.CreateList(tt.args...)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CreateList():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
 			}
@@ -234,12 +234,12 @@ func Test_list_Create(t *testing.T) {
 		name string
 		l    baseList
 		args []int
-		want baseIList
+		want IGenericList
 	}{
 		{"Empty", nil, nil, baseList{}},
 		{"Existing List", baseList{1, 2}, nil, baseList{}},
 		{"With Empty spaces", baseList{1, 2}, []int{5}, baseList{nil, nil, nil, nil, nil}},
-		{"With Capacity", baseList{1, 2}, []int{0, 5}, baseListHelper.CreateList(0, 5)},
+		{"With Capacity", baseList{1, 2}, []int{0, 5}, lh.CreateList(0, 5)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -261,7 +261,7 @@ func Test_list_New(t *testing.T) {
 		name string
 		l    baseList
 		args []interface{}
-		want baseIList
+		want IGenericList
 	}{
 		{"Empty", nil, nil, baseList{}},
 		{"Existing List", baseList{1, 2}, nil, baseList{}},
@@ -287,7 +287,7 @@ func Test_list_CreateDict(t *testing.T) {
 		name    string
 		l       baseList
 		args    []int
-		want    baseIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, nil, baseDict{}, false},
@@ -502,7 +502,7 @@ func Test_list_Reverse(t *testing.T) {
 	tests := []struct {
 		name string
 		l    baseList
-		want baseIList
+		want IGenericList
 	}{
 		{"Empty List", baseList{}, baseList{}},
 		{"List of int", baseList{1, 2, 3}, baseList{3, 2, 1}},
@@ -527,9 +527,9 @@ func Test_list_Set(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		l       baseIList
+		l       IGenericList
 		args    args
-		want    baseIList
+		want    IGenericList
 		wantErr bool
 	}{
 		{"Empty", baseList{}, args{2, 1}, baseList{nil, nil, 1}, false},
@@ -567,9 +567,9 @@ var mapFixture = map[string]interface{}{
 	},
 }
 
-var dictFixture = baseDict(baseDictHelper.AsDictionary(mapFixture).AsMap())
+var dictFixture = baseDict(dh.AsDictionary(mapFixture).AsMap())
 
-func dumpKeys(t *testing.T, d1, d2 baseIDict) {
+func dumpKeys(t *testing.T, d1, d2 IDictionary) {
 	t.Parallel()
 
 	for key := range d1.AsMap() {
@@ -609,7 +609,7 @@ func Test_dict_Clone(t *testing.T) {
 		name string
 		d    baseDict
 		keys []interface{}
-		want baseIDict
+		want IDictionary
 	}{
 		{"Nil", nil, nil, baseDict{}},
 		{"Empty", baseDict{}, nil, baseDict{}},
@@ -646,7 +646,7 @@ func Test_baseDict_CreateList(t *testing.T) {
 		name         string
 		d            baseDict
 		args         []int
-		want         baseIList
+		want         IGenericList
 		wantLen      int
 		wantCapacity int
 	}{
@@ -677,7 +677,7 @@ func Test_dict_Create(t *testing.T) {
 		name    string
 		d       baseDict
 		args    []int
-		want    baseIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, nil, baseDict{}, false},
@@ -738,7 +738,7 @@ func Test_dict_Delete(t *testing.T) {
 		name    string
 		d       baseDict
 		args    args
-		want    baseIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, args{}, baseDict{}, true},
@@ -770,7 +770,7 @@ func Test_dict_Flush(t *testing.T) {
 		name string
 		d    baseDict
 		keys []interface{}
-		want baseIDict
+		want IDictionary
 	}{
 		{"Empty", nil, nil, baseDict{}},
 		{"Map", dictFixture, nil, baseDict{}},
@@ -800,7 +800,7 @@ func Test_dict_Keys(t *testing.T) {
 	tests := []struct {
 		name string
 		d    baseDict
-		want baseIList
+		want IGenericList
 	}{
 		{"Empty", nil, baseList{}},
 		{"Map", dictFixture, baseList{String("float"), String("int"), String("list"), String("listInt"), String("map"), String("mapInt"), String("string")}},
@@ -851,23 +851,23 @@ func Test_dict_Merge(t *testing.T) {
 		},
 	}
 	type args struct {
-		baseDict baseIDict
-		dicts    []baseIDict
+		baseDict IDictionary
+		dicts    []IDictionary
 	}
 	tests := []struct {
 		name string
 		d    baseDict
 		args args
-		want baseIDict
+		want IDictionary
 	}{
-		{"Empty", nil, args{nil, []baseIDict{}}, baseDict{}},
-		{"Add map to empty", nil, args{dictFixture, []baseIDict{}}, dictFixture},
-		{"Add map to same map", dictFixture, args{dictFixture, []baseIDict{}}, dictFixture},
-		{"Add empty to map", dictFixture, args{nil, []baseIDict{}}, dictFixture},
-		{"Add new1 to map", dictFixture, args{adding1, []baseIDict{}}, dictFixture.Clone().Merge(adding1)},
-		{"Add new2 to map", dictFixture, args{adding2, []baseIDict{}}, dictFixture.Clone().Merge(adding2)},
-		{"Add new1 & new2 to map", dictFixture, args{adding1, []baseIDict{adding2}}, dictFixture.Clone().Merge(adding1, adding2)},
-		{"Add new1 & new2 to map", dictFixture, args{adding1, []baseIDict{adding2}}, dictFixture.Clone().Merge(adding1).Merge(adding2)},
+		{"Empty", nil, args{nil, []IDictionary{}}, baseDict{}},
+		{"Add map to empty", nil, args{dictFixture, []IDictionary{}}, dictFixture},
+		{"Add map to same map", dictFixture, args{dictFixture, []IDictionary{}}, dictFixture},
+		{"Add empty to map", dictFixture, args{nil, []IDictionary{}}, dictFixture},
+		{"Add new1 to map", dictFixture, args{adding1, []IDictionary{}}, dictFixture.Clone().Merge(adding1)},
+		{"Add new2 to map", dictFixture, args{adding2, []IDictionary{}}, dictFixture.Clone().Merge(adding2)},
+		{"Add new1 & new2 to map", dictFixture, args{adding1, []IDictionary{adding2}}, dictFixture.Clone().Merge(adding1, adding2)},
+		{"Add new1 & new2 to map", dictFixture, args{adding1, []IDictionary{adding2}}, dictFixture.Clone().Merge(adding1).Merge(adding2)},
 	}
 	for _, tt := range tests {
 		go t.Run(tt.name, func(t *testing.T) {
@@ -887,7 +887,7 @@ func Test_dict_Values(t *testing.T) {
 	tests := []struct {
 		name string
 		d    baseDict
-		want baseIList
+		want IGenericList
 	}{
 		{"Empty", nil, baseList{}},
 		{"Map", dictFixture, baseList{1.23, 123, baseList{1, "two"}, baseList{1, 2, 3}, baseDict{"sub1": 1, "sub2": "two"}, baseDict{"1": 1, "2": "two"}, "Foo bar"}},
@@ -909,7 +909,7 @@ func Test_dict_Pop(t *testing.T) {
 		d          baseDict
 		args       []interface{}
 		want       interface{}
-		wantObject baseIDict
+		wantObject IDictionary
 	}{
 		{"Nil", dictFixture, nil, nil, dictFixture},
 		{"Pop one element", dictFixture, []interface{}{"float"}, 1.23, dictFixture.Omit("float")},
@@ -941,7 +941,7 @@ func Test_dict_Add(t *testing.T) {
 		name string
 		d    baseDict
 		args args
-		want baseIDict
+		want IDictionary
 	}{
 		{"Empty", nil, args{"A", 1}, baseDict{"A": 1}},
 		{"With element", baseDict{"A": 1}, args{"A", 2}, baseDict{"A": baseList{1, 2}}},
@@ -968,7 +968,7 @@ func Test_dict_Set(t *testing.T) {
 		name string
 		d    baseDict
 		args args
-		want baseIDict
+		want IDictionary
 	}{
 		{"Empty", nil, args{"A", 1}, baseDict{"A": 1}},
 		{"With element", baseDict{"A": 1}, args{"A", 2}, baseDict{"A": 2}},
@@ -989,7 +989,7 @@ func Test_dict_Transpose(t *testing.T) {
 	tests := []struct {
 		name string
 		d    baseDict
-		want baseIDict
+		want IDictionary
 	}{
 		{"Empty", nil, baseDict{}},
 		{"Base", baseDict{"A": 1}, baseDict{"1": String("A")}},
@@ -1052,12 +1052,12 @@ func Test_base_TypeName(t *testing.T) {
 func Test_base_GetHelper(t *testing.T) {
 	t.Run("list", func(t *testing.T) {
 		gotD, gotL := baseList{}.GetHelpers()
-		assert.Equal(t, gotD.CreateDictionary().TypeName(), baseDictHelper.CreateDictionary().TypeName())
-		assert.Equal(t, gotL.CreateList().TypeName(), baseListHelper.CreateList().TypeName())
+		assert.Equal(t, gotD.CreateDictionary().TypeName(), dh.CreateDictionary().TypeName())
+		assert.Equal(t, gotL.CreateList().TypeName(), lh.CreateList().TypeName())
 	})
 	t.Run("dict", func(t *testing.T) {
 		gotD, gotL := baseDict{}.GetHelpers()
-		assert.Equal(t, gotD.CreateDictionary().TypeName(), baseDictHelper.CreateDictionary().TypeName())
-		assert.Equal(t, gotL.CreateList().TypeName(), baseListHelper.CreateList().TypeName())
+		assert.Equal(t, gotD.CreateDictionary().TypeName(), dh.CreateDictionary().TypeName())
+		assert.Equal(t, gotL.CreateList().TypeName(), lh.CreateList().TypeName())
 	})
 }

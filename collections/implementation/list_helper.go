@@ -16,7 +16,7 @@ type ListHelper struct {
 }
 
 // Add adds elements at the end of the supplied list.
-func (lh ListHelper) Add(list baseIList, prepend bool, objects ...interface{}) baseIList {
+func (lh ListHelper) Add(list IGenericList, prepend bool, objects ...interface{}) IGenericList {
 	array := list.AsArray()
 	for i := range objects {
 		objects[i] = lh.Convert(objects[i])
@@ -28,12 +28,12 @@ func (lh ListHelper) Add(list baseIList, prepend bool, objects ...interface{}) b
 }
 
 // Clone returns a copy of the supplied list.
-func (lh ListHelper) Clone(list baseIList) baseIList {
+func (lh ListHelper) Clone(list IGenericList) IGenericList {
 	return lh.NewList(list.AsArray()...)
 }
 
 // GetIndexes returns the element at position index in the list. If index is out of bound, nil is returned.
-func (lh ListHelper) GetIndexes(list baseIList, indexes ...int) interface{} {
+func (lh ListHelper) GetIndexes(list IGenericList, indexes ...int) interface{} {
 	switch len(indexes) {
 	case 0:
 		return nil
@@ -55,13 +55,21 @@ func (lh ListHelper) GetIndexes(list baseIList, indexes ...int) interface{} {
 	return result
 }
 
+// Pop removes and returns the elements of the list (if nothing is specified, remove the last element).
+func (lh ListHelper) Pop(list IGenericList, indexes ...int) (interface{}, IGenericList) {
+	if len(indexes) == 0 {
+		indexes = []int{list.Len() - 1}
+	}
+	return list.Get(indexes...), list.Remove(indexes...)
+}
+
 // GetStrings returns a string array representation of the list.
-func (lh ListHelper) GetStrings(list baseIList) []string {
+func (lh ListHelper) GetStrings(list IGenericList) []string {
 	return collections.ToStrings(list.AsArray())
 }
 
 // GetStringArray returns a StringArray representation of the list.
-func (lh ListHelper) GetStringArray(list baseIList) StringArray {
+func (lh ListHelper) GetStringArray(list IGenericList) StringArray {
 	result := make(StringArray, list.Len())
 	for i := 0; i < list.Len(); i++ {
 		result[i] = String(fmt.Sprint(list.Get(i)))
@@ -70,7 +78,7 @@ func (lh ListHelper) GetStringArray(list baseIList) StringArray {
 }
 
 // NewList creates a new IGenericList from supplied arguments.
-func (bh BaseHelper) NewList(items ...interface{}) baseIList {
+func (bh BaseHelper) NewList(items ...interface{}) IGenericList {
 	if len(items) == 1 && items[0] != nil {
 		v := reflect.ValueOf(items[0])
 		switch v.Kind() {
@@ -90,7 +98,7 @@ func (bh BaseHelper) NewList(items ...interface{}) baseIList {
 }
 
 // NewStringList creates a new IGenericList from supplied arguments.
-func (bh BaseHelper) NewStringList(items ...string) baseIList {
+func (bh BaseHelper) NewStringList(items ...string) IGenericList {
 	newList := bh.CreateList(0, len(items))
 	for i := range items {
 		newList = newList.Append(items[i])
@@ -99,7 +107,7 @@ func (bh BaseHelper) NewStringList(items ...string) baseIList {
 }
 
 // Reverse returns a copy of the current list in reverse order.
-func (lh ListHelper) Reverse(list baseIList) baseIList {
+func (lh ListHelper) Reverse(list IGenericList) IGenericList {
 	source := list.AsArray()
 	target := lh.CreateList(list.Len())
 	for i := range source {
@@ -109,7 +117,7 @@ func (lh ListHelper) Reverse(list baseIList) baseIList {
 }
 
 // SetIndex sets the value at position index into the list. If list is not large enough, it is enlarged to fit the index.
-func (lh ListHelper) SetIndex(list baseIList, index int, value interface{}) (baseIList, error) {
+func (lh ListHelper) SetIndex(list IGenericList, index int, value interface{}) (IGenericList, error) {
 	if index < 0 {
 		return nil, fmt.Errorf("index must be positive number")
 	}
@@ -122,12 +130,12 @@ func (lh ListHelper) SetIndex(list baseIList, index int, value interface{}) (bas
 
 // Register the implementation of list functions
 var _ = func() int {
-	collections.ListHelper = baseListHelper
+	collections.ListHelper = lh
 	return 0
 }()
 
 // Unique returns a copy of the list removing all duplicate elements.
-func (lh ListHelper) Unique(list baseIList) baseIList {
+func (lh ListHelper) Unique(list IGenericList) IGenericList {
 	source := list.AsArray()
 	target := lh.CreateList(0, list.Len())
 	for i := range source {
@@ -139,7 +147,7 @@ func (lh ListHelper) Unique(list baseIList) baseIList {
 }
 
 // Intersect returns a new list that is the result of the intersection of the list and the parameters.
-func (lh ListHelper) Intersect(list baseIList, values ...interface{}) baseIList {
+func (lh ListHelper) Intersect(list IGenericList, values ...interface{}) IGenericList {
 	source := list.Unique().AsArray()
 	include := collections.AsList(values)
 	target := lh.CreateList(0, include.Len())
@@ -152,7 +160,7 @@ func (lh ListHelper) Intersect(list baseIList, values ...interface{}) baseIList 
 }
 
 // Remove returns a new list without the element specified.
-func (lh ListHelper) Remove(list baseIList, indexes ...int) baseIList {
+func (lh ListHelper) Remove(list IGenericList, indexes ...int) IGenericList {
 	for i, index := range indexes {
 		if index < 0 {
 			indexes[i] += list.Len()
@@ -169,7 +177,7 @@ func (lh ListHelper) Remove(list baseIList, indexes ...int) baseIList {
 }
 
 // Without returns a copy of the list removing specified elements.
-func (lh ListHelper) Without(list baseIList, values ...interface{}) baseIList {
+func (lh ListHelper) Without(list IGenericList, values ...interface{}) IGenericList {
 	source := list.AsArray()
 	exclude := collections.AsList(values)
 	target := lh.CreateList(0, list.Len())
@@ -182,7 +190,7 @@ func (lh ListHelper) Without(list baseIList, values ...interface{}) baseIList {
 }
 
 // Contains indicates if the list contains all specified elements
-func (lh ListHelper) Contains(list baseIList, values ...interface{}) bool {
+func (lh ListHelper) Contains(list IGenericList, values ...interface{}) bool {
 	source := list.AsArray()
 	for _, value := range values {
 		match := false

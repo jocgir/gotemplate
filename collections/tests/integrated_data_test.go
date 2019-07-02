@@ -5,22 +5,14 @@ import (
 	"testing"
 
 	"github.com/coveooss/gotemplate/v3/collections"
-	impl "github.com/coveooss/gotemplate/v3/collections/implementation"
-	"github.com/coveooss/gotemplate/v3/hcl"
-	"github.com/coveooss/gotemplate/v3/json"
+	_ "github.com/coveooss/gotemplate/v3/hcl"
+	_ "github.com/coveooss/gotemplate/v3/json"
 	Strings "github.com/coveooss/gotemplate/v3/stringclass"
-	"github.com/coveooss/gotemplate/v3/yaml"
+	_ "github.com/coveooss/gotemplate/v3/yaml"
 	"github.com/stretchr/testify/assert"
 )
 
 type dictionary = map[string]interface{}
-
-var (
-	hclHelper  = hcl.DictionaryHelper
-	yamlHelper = yaml.DictionaryHelper
-	jsonHelper = json.DictionaryHelper
-	genHelper  = impl.DictionaryHelper
-)
 
 func TestConvertData(t *testing.T) {
 	tests := []struct {

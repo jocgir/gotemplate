@@ -44,18 +44,18 @@ func transform(out interface{}) {
 	result := transformElement(flatten(reflect.ValueOf(out).Elem().Interface()))
 	if _, isMap := out.(*map[string]interface{}); isMap {
 		// If the result is expected to be map[string]interface{}, we convert it back from internal dict type.
-		result = result.(hclIDict).Native()
+		result = result.(IDictionary).Native()
 	}
 	reflect.ValueOf(out).Elem().Set(reflect.ValueOf(result))
 }
 
 func transformElement(source interface{}) interface{} {
-	if value, err := hclHelper.TryAsDictionary(source); err == nil {
+	if value, err := helper.TryAsDictionary(source); err == nil {
 		for _, key := range value.KeysAsString() {
 			value.Set(key, transformElement(value.Get(key)))
 		}
 		source = value
-	} else if value, err := hclHelper.TryAsList(source); err == nil {
+	} else if value, err := helper.TryAsList(source); err == nil {
 		for i, sub := range value.AsArray() {
 			value.Set(i, transformElement(sub))
 		}
@@ -104,9 +104,9 @@ func marshalHCL(value interface{}, fullHcl, head bool, prefix, indent string) (r
 						return
 					}
 					if head {
-						results[i] = fmt.Sprintf(`%s%s%s`, id(key), ifIndent(" = ", ""), results[i])
+						results[i] = fmt.Sprintf(`%s%s%s`, identifier(key), ifIndent(" = ", ""), results[i])
 					} else {
-						results[i] = fmt.Sprintf(`%s %s %s`, specialFormat, id(key), results[i])
+						results[i] = fmt.Sprintf(`%s %s %s`, specialFormat, identifier(key), results[i])
 					}
 				}
 			}
@@ -134,7 +134,7 @@ func marshalHCL(value interface{}, fullHcl, head bool, prefix, indent string) (r
 			if element, err = marshalHCL(value[key], fullHcl, false, "", indent); err != nil {
 				return
 			}
-			result = fmt.Sprintf(`%s %s`, id(key), element)
+			result = fmt.Sprintf(`%s %s`, identifier(key), element)
 			break
 		}
 
@@ -176,7 +176,7 @@ func marshalHCL(value interface{}, fullHcl, head bool, prefix, indent string) (r
 				}
 
 				equal := ifIndent(" = ", "=")
-				if _, err := hclHelper.TryAsDictionary(value[key]); err == nil {
+				if _, err := helper.TryAsDictionary(value[key]); err == nil {
 					if multiline {
 						equal = " "
 					} else if indent == "" {
@@ -185,16 +185,16 @@ func marshalHCL(value interface{}, fullHcl, head bool, prefix, indent string) (r
 				}
 
 				if strings.Contains(rendered, specialFormat) {
-					items = append(items, strings.Replace(rendered, specialFormat, id(key), -1))
+					items = append(items, strings.Replace(rendered, specialFormat, identifier(key), -1))
 
 				} else {
 					if indent == "" {
 						keyLen = 0
 						if equal == "" && !strings.HasPrefix(rendered, `{`) {
-							keyLen = len(id(key)) + 1
+							keyLen = len(identifier(key)) + 1
 						}
 					}
-					items = append(items, fmt.Sprintf("%*s%s%s", -keyLen, id(key), equal, rendered))
+					items = append(items, fmt.Sprintf("%*s%s%s", -keyLen, identifier(key), equal, rendered))
 				}
 			}
 		}
@@ -244,7 +244,7 @@ func singleMap(m map[string]interface{}) string {
 
 var identifierRegex = regexp.MustCompile(`^[A-za-z][\w-]*$`)
 
-func id(key string) string {
+func identifier(key string) string {
 	if identifierRegex.MatchString(key) {
 		return key
 	}

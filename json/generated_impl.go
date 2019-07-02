@@ -10,141 +10,109 @@ import (
 	"github.com/coveooss/gotemplate/v3/stringclass"
 )
 
-// List implementation of IGenericList for jsonList
-type List = jsonList
-type jsonIList = collections.IGenericList
-type jsonList []interface{}
-
-func (l jsonList) AsArray() []interface{} { return []interface{}(l) }
-func (l jsonList) Cap() int               { return cap(l) }
-func (l jsonList) Capacity() int          { return cap(l) }
-func (l jsonList) Clone() jsonIList       { return jsonListHelper.Clone(l) }
-func (l jsonList) Contains(values ...interface{}) bool {
-	return jsonListHelper.Contains(l, values...)
-}
-func (l jsonList) Count() int                   { return len(l) }
-func (l jsonList) Create(args ...int) jsonIList { return jsonListHelper.CreateList(args...) }
-func (l jsonList) CreateDict(args ...int) jsonIDict {
-	return jsonListHelper.CreateDictionary(args...)
-}
-func (l jsonList) First() interface{} { return jsonListHelper.GetIndexes(l, 0) }
-func (l jsonList) Get(indexes ...int) interface{} {
-	return jsonListHelper.GetIndexes(l, indexes...)
-}
-func (l jsonList) Has(values ...interface{}) bool    { return l.Contains(values...) }
-func (l jsonList) Join(sep interface{}) String       { return l.StringArray().Join(sep) }
-func (l jsonList) Last() interface{}                 { return jsonListHelper.GetIndexes(l, len(l)-1) }
-func (l jsonList) Len() int                          { return len(l) }
-func (l jsonList) New(args ...interface{}) jsonIList { return jsonListHelper.NewList(args...) }
-func (l jsonList) Reverse() jsonIList                { return jsonListHelper.Reverse(l) }
-func (l jsonList) StringArray() StringArray          { return jsonListHelper.GetStringArray(l) }
-func (l jsonList) Strings() []string                 { return jsonListHelper.GetStrings(l) }
-func (l jsonList) TypeName() String                  { return "Json" }
-func (l jsonList) Unique() jsonIList                 { return jsonListHelper.Unique(l) }
-
-func (l jsonList) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
-	return jsonDictHelper, jsonListHelper
-}
-
-func (l jsonList) Append(values ...interface{}) jsonIList {
-	return jsonListHelper.Add(l, false, values...)
-}
-
-func (l jsonList) Intersect(values ...interface{}) jsonIList {
-	return jsonListHelper.Intersect(l, values...)
-}
-
-func (l jsonList) Pop(indexes ...int) (interface{}, jsonIList) {
-	if len(indexes) == 0 {
-		indexes = []int{len(l) - 1}
-	}
-	return l.Get(indexes...), l.Remove(indexes...)
-}
-
-func (l jsonList) Prepend(values ...interface{}) jsonIList {
-	return jsonListHelper.Add(l, true, values...)
-}
-
-func (l jsonList) Remove(indexes ...int) jsonIList {
-	return jsonListHelper.Remove(l, indexes...)
-}
-
-func (l jsonList) Set(i int, v interface{}) (jsonIList, error) {
-	return jsonListHelper.SetIndex(l, i, v)
-}
-
-func (l jsonList) Union(values ...interface{}) jsonIList {
-	return jsonListHelper.Add(l, false, values...).Unique()
-}
-
-func (l jsonList) Without(values ...interface{}) jsonIList {
-	return jsonListHelper.Without(l, values...)
-}
-
-// Dictionary implementation of IDictionary for jsonDict
-type Dictionary = jsonDict
-type jsonIDict = collections.IDictionary
-type jsonDict map[string]interface{}
-
-func (d jsonDict) Add(key, v interface{}) jsonIDict    { return jsonDictHelper.Add(d, key, v) }
-func (d jsonDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
-func (d jsonDict) Clone(keys ...interface{}) jsonIDict { return jsonDictHelper.Clone(d, keys) }
-func (d jsonDict) Count() int                          { return len(d) }
-func (d jsonDict) Create(args ...int) jsonIDict        { return jsonListHelper.CreateDictionary(args...) }
-func (d jsonDict) CreateList(args ...int) jsonIList    { return jsonHelper.CreateList(args...) }
-func (d jsonDict) Flush(keys ...interface{}) jsonIDict { return jsonDictHelper.Flush(d, keys) }
-func (d jsonDict) Get(keys ...interface{}) interface{} { return jsonDictHelper.Get(d, keys) }
-func (d jsonDict) GetKeys() jsonIList                  { return jsonDictHelper.GetKeys(d) }
-func (d jsonDict) GetValues() jsonIList                { return jsonDictHelper.GetValues(d) }
-func (d jsonDict) Has(keys ...interface{}) bool        { return jsonDictHelper.Has(d, keys) }
-func (d jsonDict) KeysAsString() StringArray           { return jsonDictHelper.KeysAsString(d) }
-func (d jsonDict) Len() int                            { return len(d) }
-func (d jsonDict) Native() interface{}                 { return must(collections.MarshalGo(d)) }
-func (d jsonDict) Pop(keys ...interface{}) interface{} { return jsonDictHelper.Pop(d, keys) }
-func (d jsonDict) Set(key, v interface{}) jsonIDict    { return jsonDictHelper.Set(d, key, v) }
-func (d jsonDict) Transpose() jsonIDict                { return jsonDictHelper.Transpose(d) }
-func (d jsonDict) TypeName() String                    { return "Json" }
-
-func (d jsonDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
-	return jsonDictHelper, jsonListHelper
-}
-
-func (d jsonDict) Default(key, defVal interface{}) interface{} {
-	return jsonDictHelper.Default(d, key, defVal)
-}
-
-func (d jsonDict) Delete(key interface{}, otherKeys ...interface{}) (jsonIDict, error) {
-	return jsonDictHelper.Delete(d, append([]interface{}{key}, otherKeys...))
-}
-
-func (d jsonDict) Merge(dict jsonIDict, otherDicts ...jsonIDict) jsonIDict {
-	return jsonDictHelper.Merge(d, append([]jsonIDict{dict}, otherDicts...))
-}
-
-func (d jsonDict) Omit(key interface{}, otherKeys ...interface{}) jsonIDict {
-	return jsonDictHelper.Omit(d, append([]interface{}{key}, otherKeys...))
-}
-
-// Generic helpers to simplify physical implementation
-func jsonListConvert(list jsonIList) jsonIList { return jsonList(list.AsArray()) }
-func jsonDictConvert(dict jsonIDict) jsonIDict { return jsonDict(dict.AsMap()) }
-func needConversion(object interface{}, strict bool) bool {
-	return needConversionImpl(object, strict, "Json")
-}
-
-var jsonHelper = helperBase{ConvertList: jsonListConvert, ConvertDict: jsonDictConvert, NeedConversion: needConversion}
-var jsonListHelper = helperList{BaseHelper: jsonHelper}
-var jsonDictHelper = helperDict{BaseHelper: jsonHelper}
-
-// DictionaryHelper gives public access to the basic dictionary functions
-var DictionaryHelper collections.IDictionaryHelper = jsonDictHelper
-
-// GenericListHelper gives public access to the basic list functions
-var GenericListHelper collections.IListHelper = jsonListHelper
+// SetAsDefault configure the current implementation as default list & dictionary manager.
+func SetAsDefault() { collections.ListHelper, collections.DictionaryHelper = lh, dh }
 
 type (
+	itf = interface{}
+
+	// List is the json implementation of IGenericList
+	List     = jsonList
+	jsonList []itf
+	il       = IGenericList
+	bl       = jsonList
+
+	// Dictionary is the json implementation of IDictionary
+	Dictionary = jsonDict
+	jsonDict   map[string]itf
+	id         = IDictionary
+	bd         = jsonDict
+)
+
+// List implementation
+func (l bl) Append(values ...itf) il                { return lh.Add(l, false, values...) }
+func (l bl) AsArray() []itf                         { return []itf(l) }
+func (l bl) Cap() int                               { return cap(l) }
+func (l bl) Capacity() int                          { return cap(l) }
+func (l bl) Clone() il                              { return lh.Clone(l) }
+func (l bl) Contains(values ...itf) bool            { return lh.Contains(l, values...) }
+func (l bl) Count() int                             { return len(l) }
+func (l bl) Create(args ...int) il                  { return lh.CreateList(args...) }
+func (l bl) CreateDict(args ...int) id              { return lh.CreateDictionary(args...) }
+func (l bl) First() itf                             { return lh.GetIndexes(l, 0) }
+func (l bl) Get(indexes ...int) itf                 { return lh.GetIndexes(l, indexes...) }
+func (l bl) GetHelpers() (IDictHelper, IListHelper) { return dh, lh }
+func (l bl) Has(values ...itf) bool                 { return l.Contains(values...) }
+func (l bl) Intersect(values ...itf) il             { return lh.Intersect(l, values...) }
+func (l bl) Join(sep itf) String                    { return l.StringArray().Join(sep) }
+func (l bl) Last() itf                              { return lh.GetIndexes(l, len(l)-1) }
+func (l bl) Len() int                               { return len(l) }
+func (l bl) New(args ...itf) il                     { return lh.NewList(args...) }
+func (l bl) Pop(indexes ...int) (itf, il)           { return lh.Pop(l, indexes...) }
+func (l bl) Prepend(values ...itf) il               { return lh.Add(l, true, values...) }
+func (l bl) Remove(indexes ...int) il               { return lh.Remove(l, indexes...) }
+func (l bl) Reverse() il                            { return lh.Reverse(l) }
+func (l bl) Set(i int, v itf) (il, error)           { return lh.SetIndex(l, i, v) }
+func (l bl) StringArray() StringArray               { return lh.GetStringArray(l) }
+func (l bl) Strings() []string                      { return lh.GetStrings(l) }
+func (l bl) TypeName() String                       { return "Json" }
+func (l bl) Union(values ...itf) il                 { return lh.Add(l, false, values...).Unique() }
+func (l bl) Unique() il                             { return lh.Unique(l) }
+func (l bl) Without(values ...itf) il               { return lh.Without(l, values...) }
+
+// Dictionary implementation
+func (d bd) Add(key, v itf) id                         { return dh.Add(d, key, v) }
+func (d bd) AsMap() map[string]itf                     { return (map[string]itf)(d) }
+func (d bd) Clone(keys ...itf) id                      { return dh.Clone(d, keys) }
+func (d bd) Count() int                                { return len(d) }
+func (d bd) Create(args ...int) id                     { return lh.CreateDictionary(args...) }
+func (d bd) CreateList(args ...int) il                 { return dh.CreateList(args...) }
+func (d bd) Default(key, defVal itf) itf               { return dh.Default(d, key, defVal) }
+func (d bd) Delete(first itf, rest ...itf) (id, error) { return dh.Delete(d, first, rest) }
+func (d bd) Flush(keys ...itf) id                      { return dh.Flush(d, keys) }
+func (d bd) Get(keys ...itf) itf                       { return dh.Get(d, keys) }
+func (d bd) GetHelpers() (IDictHelper, IListHelper)    { return dh, lh }
+func (d bd) GetKeys() il                               { return dh.GetKeys(d) }
+func (d bd) GetValues() il                             { return dh.GetValues(d) }
+func (d bd) Has(keys ...itf) bool                      { return dh.Has(d, keys) }
+func (d bd) KeysAsString() StringArray                 { return dh.KeysAsString(d) }
+func (d bd) Len() int                                  { return len(d) }
+func (d bd) Merge(first id, rest ...id) id             { return dh.Merge(d, first, rest) }
+func (d bd) Native() itf                               { return must(collections.MarshalGo(d)) }
+func (d bd) Omit(first itf, rest ...itf) id            { return dh.Omit(d, first, rest) }
+func (d bd) Pop(keys ...itf) itf                       { return dh.Pop(d, keys) }
+func (d bd) Set(key, v itf) id                         { return dh.Set(d, key, v) }
+func (d bd) Transpose() id                             { return dh.Transpose(d) }
+func (d bd) TypeName() String                          { return "Json" }
+
+// Generic helpers to simplify physical implementation
+var (
+	helper = helperBase{
+		ConvertList:    func(list il) il { return jsonList(list.AsArray()) },
+		ConvertDict:    func(dict id) id { return jsonDict(dict.AsMap()) },
+		NeedConversion: func(object itf, strict bool) bool { return needConversionImpl(object, strict, "Json") },
+	}
+	lh = helperList{BaseHelper: helper}
+	dh = helperDict{BaseHelper: helper}
+)
+
+// Imported types
+type (
+	// IGenericList is imported from collections
+	IGenericList = collections.IGenericList
+
+	// IListHelper is imported from collections
+	IListHelper = collections.IListHelper
+
+	// IDictionary is imported from collections
+	IDictionary = collections.IDictionary
+
+	// IDictHelper is imported from collections
+	IDictHelper = collections.IDictionaryHelper
+
 	// String is imported from stringclass
 	String = stringclass.String
+
 	// StringArray is imported from stringclass
 	StringArray = stringclass.StringArray
 )
@@ -152,6 +120,6 @@ type (
 // Imported functions
 var (
 	iif           = collections.IIf
-	TrimmedString = stringclass.TrimmedString
 	must          = errors.Must
+	TrimmedString = stringclass.TrimmedString
 )

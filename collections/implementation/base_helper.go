@@ -11,19 +11,19 @@ type helperDict = DictHelper
 
 // BaseHelper implements basic functionalities required for both IGenericList & IDictionary
 type BaseHelper struct {
-	ConvertList    func(list baseIList) baseIList
-	ConvertDict    func(dict baseIDict) baseIDict
+	ConvertList    func(list IGenericList) IGenericList
+	ConvertDict    func(dict IDictionary) IDictionary
 	NeedConversion func(object interface{}, strict bool) bool
 }
 
 // AsList converts object to IGenericList object. It panics if conversion is impossible.
-func (bh BaseHelper) AsList(object interface{}) baseIList {
-	return must(bh.TryAsList(object)).(baseIList)
+func (bh BaseHelper) AsList(object interface{}) IGenericList {
+	return must(bh.TryAsList(object)).(IGenericList)
 }
 
 // AsDictionary converts object to IDictionary object. It panics if conversion is impossible.
-func (bh BaseHelper) AsDictionary(object interface{}) baseIDict {
-	return must(bh.TryAsDictionary(object)).(baseIDict)
+func (bh BaseHelper) AsDictionary(object interface{}) IDictionary {
+	return must(bh.TryAsDictionary(object)).(IDictionary)
 }
 
 // Convert tries to convert the supplied object into IDictionary or IGenericList.
@@ -34,7 +34,7 @@ func (bh BaseHelper) Convert(object interface{}) interface{} {
 }
 
 // CreateList creates a new IGenericList with optional size/capacity arguments.
-func (bh BaseHelper) CreateList(args ...int) baseIList {
+func (bh BaseHelper) CreateList(args ...int) IGenericList {
 	var size, capacity int
 	switch len(args) {
 	case 0:
@@ -52,7 +52,7 @@ func (bh BaseHelper) CreateList(args ...int) baseIList {
 }
 
 // CreateDictionary creates a new IDictionary with optional capacity arguments.
-func (bh BaseHelper) CreateDictionary(args ...int) baseIDict {
+func (bh BaseHelper) CreateDictionary(args ...int) IDictionary {
 	var capacity int
 	switch len(args) {
 	case 0:
@@ -65,22 +65,22 @@ func (bh BaseHelper) CreateDictionary(args ...int) baseIDict {
 }
 
 // TryAsDictionary tries to convert any object to IDictionary object.
-func (bh BaseHelper) TryAsDictionary(object interface{}) (baseIDict, error) {
+func (bh BaseHelper) TryAsDictionary(object interface{}) (IDictionary, error) {
 	return bh.tryAsDictionary(object, false)
 }
 
 // TryAsDictionaryStrict tries to convert any object to IDictionary object.
-func (bh BaseHelper) TryAsDictionaryStrict(object interface{}) (baseIDict, error) {
+func (bh BaseHelper) TryAsDictionaryStrict(object interface{}) (IDictionary, error) {
 	return bh.tryAsDictionary(object, true)
 }
 
-func (bh BaseHelper) tryAsDictionary(object interface{}, strict bool) (baseIDict, error) {
+func (bh BaseHelper) tryAsDictionary(object interface{}, strict bool) (IDictionary, error) {
 	if object != nil && reflect.TypeOf(object).Kind() == reflect.Ptr {
 		object = reflect.ValueOf(object).Elem().Interface()
 	}
 
-	var result baseIDict
-	if dict, ok := object.(baseIDict); ok {
+	var result IDictionary
+	if dict, ok := object.(IDictionary); ok {
 		// The object is already a IDictionary
 		result = dict
 	} else if object == nil {
@@ -89,7 +89,7 @@ func (bh BaseHelper) tryAsDictionary(object interface{}, strict bool) (baseIDict
 		target := reflect.TypeOf(baseDict{})
 		objectType := reflect.TypeOf(object)
 		if objectType.ConvertibleTo(target) {
-			result = bh.ConvertDict(reflect.ValueOf(object).Convert(target).Interface().(baseIDict))
+			result = bh.ConvertDict(reflect.ValueOf(object).Convert(target).Interface().(IDictionary))
 		} else {
 			switch objectType.Kind() {
 			case reflect.Map:
@@ -119,22 +119,22 @@ func (bh BaseHelper) tryAsDictionary(object interface{}, strict bool) (baseIDict
 }
 
 // TryAsList tries to convert any object to IGenericList object.
-func (bh BaseHelper) TryAsList(object interface{}) (baseIList, error) {
+func (bh BaseHelper) TryAsList(object interface{}) (IGenericList, error) {
 	return bh.tryAsList(object, false)
 }
 
 // TryAsListStrict tries to convert any object to IGenericList object.
-func (bh BaseHelper) TryAsListStrict(object interface{}) (baseIList, error) {
+func (bh BaseHelper) TryAsListStrict(object interface{}) (IGenericList, error) {
 	return bh.tryAsList(object, true)
 }
 
-func (bh BaseHelper) tryAsList(object interface{}, strict bool) (baseIList, error) {
+func (bh BaseHelper) tryAsList(object interface{}, strict bool) (IGenericList, error) {
 	if object != nil && reflect.TypeOf(object).Kind() == reflect.Ptr {
 		object = reflect.ValueOf(object).Elem().Interface()
 	}
 
-	var result baseIList
-	if list, ok := object.(baseIList); ok {
+	var result IGenericList
+	if list, ok := object.(IGenericList); ok {
 		// The object is already a IGenericList
 		result = list
 	} else if object == nil {
@@ -143,7 +143,7 @@ func (bh BaseHelper) tryAsList(object interface{}, strict bool) (baseIList, erro
 		target := reflect.TypeOf(baseList{})
 		objectType := reflect.TypeOf(object)
 		if objectType.ConvertibleTo(target) {
-			result = bh.ConvertList(reflect.ValueOf(object).Convert(target).Interface().(baseIList))
+			result = bh.ConvertList(reflect.ValueOf(object).Convert(target).Interface().(IGenericList))
 		} else {
 			switch objectType.Kind() {
 			case reflect.Slice, reflect.Array:
@@ -191,7 +191,7 @@ func NeedConversion(object interface{}, strict bool, typeName string) bool {
 	objectType := reflect.TypeOf(object)
 	switch objectType.Kind() {
 	case reflect.Map:
-		if dict, ok := object.(baseIDict); !ok || strict && dict.TypeName().Str() != typeName {
+		if dict, ok := object.(IDictionary); !ok || strict && dict.TypeName().Str() != typeName {
 			return true
 		}
 
@@ -203,7 +203,7 @@ func NeedConversion(object interface{}, strict bool, typeName string) bool {
 			}
 		}
 	case reflect.Slice, reflect.Array:
-		if list, ok := object.(baseIList); !ok || strict && list.TypeName().Str() != typeName {
+		if list, ok := object.(IGenericList); !ok || strict && list.TypeName().Str() != typeName {
 			return true
 		}
 		value := reflect.ValueOf(object)

@@ -14,16 +14,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var strFixture = xmlList(xmlListHelper.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
+var strFixture = xmlList(lh.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
 
 func Test_list_Append(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name   string
-		l      xmlIList
+		l      IGenericList
 		values []interface{}
-		want   xmlIList
+		want   IGenericList
 	}{
 		{"Empty", xmlList{}, []interface{}{1, 2, 3}, xmlList{1, 2, 3}},
 		{"List of int", xmlList{1, 2, 3}, []interface{}{4, 5}, xmlList{1, 2, 3, 4, 5}},
@@ -44,9 +44,9 @@ func Test_list_Prepend(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		l      xmlIList
+		l      IGenericList
 		values []interface{}
-		want   xmlIList
+		want   IGenericList
 	}{
 		{"Empty", xmlList{}, []interface{}{1, 2, 3}, xmlList{1, 2, 3}},
 		{"List of int", xmlList{1, 2, 3}, []interface{}{4, 5}, xmlList{4, 5, 1, 2, 3}},
@@ -109,10 +109,10 @@ func Test_list_Capacity(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    xmlIList
+		l    IGenericList
 		want int
 	}{
-		{"Empty List with 100 spaces", xmlListHelper.CreateList(0, 100), 100},
+		{"Empty List with 100 spaces", lh.CreateList(0, 100), 100},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -132,7 +132,7 @@ func Test_list_Clone(t *testing.T) {
 	tests := []struct {
 		name string
 		l    xmlList
-		want xmlIList
+		want IGenericList
 	}{
 		{"Empty List", xmlList{}, xmlList{}},
 		{"List of int", xmlList{1, 2, 3}, xmlList{1, 2, 3}},
@@ -204,7 +204,7 @@ func Test_CreateList(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []int
-		want    xmlIList
+		want    IGenericList
 		wantErr bool
 	}{
 		{"Empty", nil, xmlList{}, false},
@@ -216,7 +216,7 @@ func Test_CreateList(t *testing.T) {
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() { err = errors.Trap(err, recover()) }()
-			got := xmlListHelper.CreateList(tt.args...)
+			got := lh.CreateList(tt.args...)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CreateList():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
 			}
@@ -237,12 +237,12 @@ func Test_list_Create(t *testing.T) {
 		name string
 		l    xmlList
 		args []int
-		want xmlIList
+		want IGenericList
 	}{
 		{"Empty", nil, nil, xmlList{}},
 		{"Existing List", xmlList{1, 2}, nil, xmlList{}},
 		{"With Empty spaces", xmlList{1, 2}, []int{5}, xmlList{nil, nil, nil, nil, nil}},
-		{"With Capacity", xmlList{1, 2}, []int{0, 5}, xmlListHelper.CreateList(0, 5)},
+		{"With Capacity", xmlList{1, 2}, []int{0, 5}, lh.CreateList(0, 5)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -264,7 +264,7 @@ func Test_list_New(t *testing.T) {
 		name string
 		l    xmlList
 		args []interface{}
-		want xmlIList
+		want IGenericList
 	}{
 		{"Empty", nil, nil, xmlList{}},
 		{"Existing List", xmlList{1, 2}, nil, xmlList{}},
@@ -290,7 +290,7 @@ func Test_list_CreateDict(t *testing.T) {
 		name    string
 		l       xmlList
 		args    []int
-		want    xmlIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, nil, xmlDict{}, false},
@@ -505,7 +505,7 @@ func Test_list_Reverse(t *testing.T) {
 	tests := []struct {
 		name string
 		l    xmlList
-		want xmlIList
+		want IGenericList
 	}{
 		{"Empty List", xmlList{}, xmlList{}},
 		{"List of int", xmlList{1, 2, 3}, xmlList{3, 2, 1}},
@@ -530,9 +530,9 @@ func Test_list_Set(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		l       xmlIList
+		l       IGenericList
 		args    args
-		want    xmlIList
+		want    IGenericList
 		wantErr bool
 	}{
 		{"Empty", xmlList{}, args{2, 1}, xmlList{nil, nil, 1}, false},
@@ -570,9 +570,9 @@ var mapFixture = map[string]interface{}{
 	},
 }
 
-var dictFixture = xmlDict(xmlDictHelper.AsDictionary(mapFixture).AsMap())
+var dictFixture = xmlDict(dh.AsDictionary(mapFixture).AsMap())
 
-func dumpKeys(t *testing.T, d1, d2 xmlIDict) {
+func dumpKeys(t *testing.T, d1, d2 IDictionary) {
 	t.Parallel()
 
 	for key := range d1.AsMap() {
@@ -612,7 +612,7 @@ func Test_dict_Clone(t *testing.T) {
 		name string
 		d    xmlDict
 		keys []interface{}
-		want xmlIDict
+		want IDictionary
 	}{
 		{"Nil", nil, nil, xmlDict{}},
 		{"Empty", xmlDict{}, nil, xmlDict{}},
@@ -649,7 +649,7 @@ func Test_XmlDict_CreateList(t *testing.T) {
 		name         string
 		d            xmlDict
 		args         []int
-		want         xmlIList
+		want         IGenericList
 		wantLen      int
 		wantCapacity int
 	}{
@@ -680,7 +680,7 @@ func Test_dict_Create(t *testing.T) {
 		name    string
 		d       xmlDict
 		args    []int
-		want    xmlIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, nil, xmlDict{}, false},
@@ -741,7 +741,7 @@ func Test_dict_Delete(t *testing.T) {
 		name    string
 		d       xmlDict
 		args    args
-		want    xmlIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, args{}, xmlDict{}, true},
@@ -773,7 +773,7 @@ func Test_dict_Flush(t *testing.T) {
 		name string
 		d    xmlDict
 		keys []interface{}
-		want xmlIDict
+		want IDictionary
 	}{
 		{"Empty", nil, nil, xmlDict{}},
 		{"Map", dictFixture, nil, xmlDict{}},
@@ -803,7 +803,7 @@ func Test_dict_Keys(t *testing.T) {
 	tests := []struct {
 		name string
 		d    xmlDict
-		want xmlIList
+		want IGenericList
 	}{
 		{"Empty", nil, xmlList{}},
 		{"Map", dictFixture, xmlList{String("float"), String("int"), String("list"), String("listInt"), String("map"), String("mapInt"), String("string")}},
@@ -854,23 +854,23 @@ func Test_dict_Merge(t *testing.T) {
 		},
 	}
 	type args struct {
-		xmlDict xmlIDict
-		dicts   []xmlIDict
+		xmlDict IDictionary
+		dicts   []IDictionary
 	}
 	tests := []struct {
 		name string
 		d    xmlDict
 		args args
-		want xmlIDict
+		want IDictionary
 	}{
-		{"Empty", nil, args{nil, []xmlIDict{}}, xmlDict{}},
-		{"Add map to empty", nil, args{dictFixture, []xmlIDict{}}, dictFixture},
-		{"Add map to same map", dictFixture, args{dictFixture, []xmlIDict{}}, dictFixture},
-		{"Add empty to map", dictFixture, args{nil, []xmlIDict{}}, dictFixture},
-		{"Add new1 to map", dictFixture, args{adding1, []xmlIDict{}}, dictFixture.Clone().Merge(adding1)},
-		{"Add new2 to map", dictFixture, args{adding2, []xmlIDict{}}, dictFixture.Clone().Merge(adding2)},
-		{"Add new1 & new2 to map", dictFixture, args{adding1, []xmlIDict{adding2}}, dictFixture.Clone().Merge(adding1, adding2)},
-		{"Add new1 & new2 to map", dictFixture, args{adding1, []xmlIDict{adding2}}, dictFixture.Clone().Merge(adding1).Merge(adding2)},
+		{"Empty", nil, args{nil, []IDictionary{}}, xmlDict{}},
+		{"Add map to empty", nil, args{dictFixture, []IDictionary{}}, dictFixture},
+		{"Add map to same map", dictFixture, args{dictFixture, []IDictionary{}}, dictFixture},
+		{"Add empty to map", dictFixture, args{nil, []IDictionary{}}, dictFixture},
+		{"Add new1 to map", dictFixture, args{adding1, []IDictionary{}}, dictFixture.Clone().Merge(adding1)},
+		{"Add new2 to map", dictFixture, args{adding2, []IDictionary{}}, dictFixture.Clone().Merge(adding2)},
+		{"Add new1 & new2 to map", dictFixture, args{adding1, []IDictionary{adding2}}, dictFixture.Clone().Merge(adding1, adding2)},
+		{"Add new1 & new2 to map", dictFixture, args{adding1, []IDictionary{adding2}}, dictFixture.Clone().Merge(adding1).Merge(adding2)},
 	}
 	for _, tt := range tests {
 		go t.Run(tt.name, func(t *testing.T) {
@@ -890,7 +890,7 @@ func Test_dict_Values(t *testing.T) {
 	tests := []struct {
 		name string
 		d    xmlDict
-		want xmlIList
+		want IGenericList
 	}{
 		{"Empty", nil, xmlList{}},
 		{"Map", dictFixture, xmlList{1.23, 123, xmlList{1, "two"}, xmlList{1, 2, 3}, xmlDict{"sub1": 1, "sub2": "two"}, xmlDict{"1": 1, "2": "two"}, "Foo bar"}},
@@ -912,7 +912,7 @@ func Test_dict_Pop(t *testing.T) {
 		d          xmlDict
 		args       []interface{}
 		want       interface{}
-		wantObject xmlIDict
+		wantObject IDictionary
 	}{
 		{"Nil", dictFixture, nil, nil, dictFixture},
 		{"Pop one element", dictFixture, []interface{}{"float"}, 1.23, dictFixture.Omit("float")},
@@ -944,7 +944,7 @@ func Test_dict_Add(t *testing.T) {
 		name string
 		d    xmlDict
 		args args
-		want xmlIDict
+		want IDictionary
 	}{
 		{"Empty", nil, args{"A", 1}, xmlDict{"A": 1}},
 		{"With element", xmlDict{"A": 1}, args{"A", 2}, xmlDict{"A": xmlList{1, 2}}},
@@ -971,7 +971,7 @@ func Test_dict_Set(t *testing.T) {
 		name string
 		d    xmlDict
 		args args
-		want xmlIDict
+		want IDictionary
 	}{
 		{"Empty", nil, args{"A", 1}, xmlDict{"A": 1}},
 		{"With element", xmlDict{"A": 1}, args{"A", 2}, xmlDict{"A": 2}},
@@ -992,7 +992,7 @@ func Test_dict_Transpose(t *testing.T) {
 	tests := []struct {
 		name string
 		d    xmlDict
-		want xmlIDict
+		want IDictionary
 	}{
 		{"Empty", nil, xmlDict{}},
 		{"Base", xmlDict{"A": 1}, xmlDict{"1": String("A")}},
@@ -1055,12 +1055,12 @@ func Test_Xml_TypeName(t *testing.T) {
 func Test_Xml_GetHelper(t *testing.T) {
 	t.Run("list", func(t *testing.T) {
 		gotD, gotL := xmlList{}.GetHelpers()
-		assert.Equal(t, gotD.CreateDictionary().TypeName(), xmlDictHelper.CreateDictionary().TypeName())
-		assert.Equal(t, gotL.CreateList().TypeName(), xmlListHelper.CreateList().TypeName())
+		assert.Equal(t, gotD.CreateDictionary().TypeName(), dh.CreateDictionary().TypeName())
+		assert.Equal(t, gotL.CreateList().TypeName(), lh.CreateList().TypeName())
 	})
 	t.Run("dict", func(t *testing.T) {
 		gotD, gotL := xmlDict{}.GetHelpers()
-		assert.Equal(t, gotD.CreateDictionary().TypeName(), xmlDictHelper.CreateDictionary().TypeName())
-		assert.Equal(t, gotL.CreateList().TypeName(), xmlListHelper.CreateList().TypeName())
+		assert.Equal(t, gotD.CreateDictionary().TypeName(), dh.CreateDictionary().TypeName())
+		assert.Equal(t, gotL.CreateList().TypeName(), lh.CreateList().TypeName())
 	})
 }

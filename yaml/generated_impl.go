@@ -10,141 +10,109 @@ import (
 	"github.com/coveooss/gotemplate/v3/stringclass"
 )
 
-// List implementation of IGenericList for yamlList
-type List = yamlList
-type yamlIList = collections.IGenericList
-type yamlList []interface{}
-
-func (l yamlList) AsArray() []interface{} { return []interface{}(l) }
-func (l yamlList) Cap() int               { return cap(l) }
-func (l yamlList) Capacity() int          { return cap(l) }
-func (l yamlList) Clone() yamlIList       { return yamlListHelper.Clone(l) }
-func (l yamlList) Contains(values ...interface{}) bool {
-	return yamlListHelper.Contains(l, values...)
-}
-func (l yamlList) Count() int                   { return len(l) }
-func (l yamlList) Create(args ...int) yamlIList { return yamlListHelper.CreateList(args...) }
-func (l yamlList) CreateDict(args ...int) yamlIDict {
-	return yamlListHelper.CreateDictionary(args...)
-}
-func (l yamlList) First() interface{} { return yamlListHelper.GetIndexes(l, 0) }
-func (l yamlList) Get(indexes ...int) interface{} {
-	return yamlListHelper.GetIndexes(l, indexes...)
-}
-func (l yamlList) Has(values ...interface{}) bool    { return l.Contains(values...) }
-func (l yamlList) Join(sep interface{}) String       { return l.StringArray().Join(sep) }
-func (l yamlList) Last() interface{}                 { return yamlListHelper.GetIndexes(l, len(l)-1) }
-func (l yamlList) Len() int                          { return len(l) }
-func (l yamlList) New(args ...interface{}) yamlIList { return yamlListHelper.NewList(args...) }
-func (l yamlList) Reverse() yamlIList                { return yamlListHelper.Reverse(l) }
-func (l yamlList) StringArray() StringArray          { return yamlListHelper.GetStringArray(l) }
-func (l yamlList) Strings() []string                 { return yamlListHelper.GetStrings(l) }
-func (l yamlList) TypeName() String                  { return "Yaml" }
-func (l yamlList) Unique() yamlIList                 { return yamlListHelper.Unique(l) }
-
-func (l yamlList) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
-	return yamlDictHelper, yamlListHelper
-}
-
-func (l yamlList) Append(values ...interface{}) yamlIList {
-	return yamlListHelper.Add(l, false, values...)
-}
-
-func (l yamlList) Intersect(values ...interface{}) yamlIList {
-	return yamlListHelper.Intersect(l, values...)
-}
-
-func (l yamlList) Pop(indexes ...int) (interface{}, yamlIList) {
-	if len(indexes) == 0 {
-		indexes = []int{len(l) - 1}
-	}
-	return l.Get(indexes...), l.Remove(indexes...)
-}
-
-func (l yamlList) Prepend(values ...interface{}) yamlIList {
-	return yamlListHelper.Add(l, true, values...)
-}
-
-func (l yamlList) Remove(indexes ...int) yamlIList {
-	return yamlListHelper.Remove(l, indexes...)
-}
-
-func (l yamlList) Set(i int, v interface{}) (yamlIList, error) {
-	return yamlListHelper.SetIndex(l, i, v)
-}
-
-func (l yamlList) Union(values ...interface{}) yamlIList {
-	return yamlListHelper.Add(l, false, values...).Unique()
-}
-
-func (l yamlList) Without(values ...interface{}) yamlIList {
-	return yamlListHelper.Without(l, values...)
-}
-
-// Dictionary implementation of IDictionary for yamlDict
-type Dictionary = yamlDict
-type yamlIDict = collections.IDictionary
-type yamlDict map[string]interface{}
-
-func (d yamlDict) Add(key, v interface{}) yamlIDict    { return yamlDictHelper.Add(d, key, v) }
-func (d yamlDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
-func (d yamlDict) Clone(keys ...interface{}) yamlIDict { return yamlDictHelper.Clone(d, keys) }
-func (d yamlDict) Count() int                          { return len(d) }
-func (d yamlDict) Create(args ...int) yamlIDict        { return yamlListHelper.CreateDictionary(args...) }
-func (d yamlDict) CreateList(args ...int) yamlIList    { return yamlHelper.CreateList(args...) }
-func (d yamlDict) Flush(keys ...interface{}) yamlIDict { return yamlDictHelper.Flush(d, keys) }
-func (d yamlDict) Get(keys ...interface{}) interface{} { return yamlDictHelper.Get(d, keys) }
-func (d yamlDict) GetKeys() yamlIList                  { return yamlDictHelper.GetKeys(d) }
-func (d yamlDict) GetValues() yamlIList                { return yamlDictHelper.GetValues(d) }
-func (d yamlDict) Has(keys ...interface{}) bool        { return yamlDictHelper.Has(d, keys) }
-func (d yamlDict) KeysAsString() StringArray           { return yamlDictHelper.KeysAsString(d) }
-func (d yamlDict) Len() int                            { return len(d) }
-func (d yamlDict) Native() interface{}                 { return must(collections.MarshalGo(d)) }
-func (d yamlDict) Pop(keys ...interface{}) interface{} { return yamlDictHelper.Pop(d, keys) }
-func (d yamlDict) Set(key, v interface{}) yamlIDict    { return yamlDictHelper.Set(d, key, v) }
-func (d yamlDict) Transpose() yamlIDict                { return yamlDictHelper.Transpose(d) }
-func (d yamlDict) TypeName() String                    { return "Yaml" }
-
-func (d yamlDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
-	return yamlDictHelper, yamlListHelper
-}
-
-func (d yamlDict) Default(key, defVal interface{}) interface{} {
-	return yamlDictHelper.Default(d, key, defVal)
-}
-
-func (d yamlDict) Delete(key interface{}, otherKeys ...interface{}) (yamlIDict, error) {
-	return yamlDictHelper.Delete(d, append([]interface{}{key}, otherKeys...))
-}
-
-func (d yamlDict) Merge(dict yamlIDict, otherDicts ...yamlIDict) yamlIDict {
-	return yamlDictHelper.Merge(d, append([]yamlIDict{dict}, otherDicts...))
-}
-
-func (d yamlDict) Omit(key interface{}, otherKeys ...interface{}) yamlIDict {
-	return yamlDictHelper.Omit(d, append([]interface{}{key}, otherKeys...))
-}
-
-// Generic helpers to simplify physical implementation
-func yamlListConvert(list yamlIList) yamlIList { return yamlList(list.AsArray()) }
-func yamlDictConvert(dict yamlIDict) yamlIDict { return yamlDict(dict.AsMap()) }
-func needConversion(object interface{}, strict bool) bool {
-	return needConversionImpl(object, strict, "Yaml")
-}
-
-var yamlHelper = helperBase{ConvertList: yamlListConvert, ConvertDict: yamlDictConvert, NeedConversion: needConversion}
-var yamlListHelper = helperList{BaseHelper: yamlHelper}
-var yamlDictHelper = helperDict{BaseHelper: yamlHelper}
-
-// DictionaryHelper gives public access to the basic dictionary functions
-var DictionaryHelper collections.IDictionaryHelper = yamlDictHelper
-
-// GenericListHelper gives public access to the basic list functions
-var GenericListHelper collections.IListHelper = yamlListHelper
+// SetAsDefault configure the current implementation as default list & dictionary manager.
+func SetAsDefault() { collections.ListHelper, collections.DictionaryHelper = lh, dh }
 
 type (
+	itf = interface{}
+
+	// List is the yaml implementation of IGenericList
+	List     = yamlList
+	yamlList []itf
+	il       = IGenericList
+	bl       = yamlList
+
+	// Dictionary is the yaml implementation of IDictionary
+	Dictionary = yamlDict
+	yamlDict   map[string]itf
+	id         = IDictionary
+	bd         = yamlDict
+)
+
+// List implementation
+func (l bl) Append(values ...itf) il                { return lh.Add(l, false, values...) }
+func (l bl) AsArray() []itf                         { return []itf(l) }
+func (l bl) Cap() int                               { return cap(l) }
+func (l bl) Capacity() int                          { return cap(l) }
+func (l bl) Clone() il                              { return lh.Clone(l) }
+func (l bl) Contains(values ...itf) bool            { return lh.Contains(l, values...) }
+func (l bl) Count() int                             { return len(l) }
+func (l bl) Create(args ...int) il                  { return lh.CreateList(args...) }
+func (l bl) CreateDict(args ...int) id              { return lh.CreateDictionary(args...) }
+func (l bl) First() itf                             { return lh.GetIndexes(l, 0) }
+func (l bl) Get(indexes ...int) itf                 { return lh.GetIndexes(l, indexes...) }
+func (l bl) GetHelpers() (IDictHelper, IListHelper) { return dh, lh }
+func (l bl) Has(values ...itf) bool                 { return l.Contains(values...) }
+func (l bl) Intersect(values ...itf) il             { return lh.Intersect(l, values...) }
+func (l bl) Join(sep itf) String                    { return l.StringArray().Join(sep) }
+func (l bl) Last() itf                              { return lh.GetIndexes(l, len(l)-1) }
+func (l bl) Len() int                               { return len(l) }
+func (l bl) New(args ...itf) il                     { return lh.NewList(args...) }
+func (l bl) Pop(indexes ...int) (itf, il)           { return lh.Pop(l, indexes...) }
+func (l bl) Prepend(values ...itf) il               { return lh.Add(l, true, values...) }
+func (l bl) Remove(indexes ...int) il               { return lh.Remove(l, indexes...) }
+func (l bl) Reverse() il                            { return lh.Reverse(l) }
+func (l bl) Set(i int, v itf) (il, error)           { return lh.SetIndex(l, i, v) }
+func (l bl) StringArray() StringArray               { return lh.GetStringArray(l) }
+func (l bl) Strings() []string                      { return lh.GetStrings(l) }
+func (l bl) TypeName() String                       { return "Yaml" }
+func (l bl) Union(values ...itf) il                 { return lh.Add(l, false, values...).Unique() }
+func (l bl) Unique() il                             { return lh.Unique(l) }
+func (l bl) Without(values ...itf) il               { return lh.Without(l, values...) }
+
+// Dictionary implementation
+func (d bd) Add(key, v itf) id                         { return dh.Add(d, key, v) }
+func (d bd) AsMap() map[string]itf                     { return (map[string]itf)(d) }
+func (d bd) Clone(keys ...itf) id                      { return dh.Clone(d, keys) }
+func (d bd) Count() int                                { return len(d) }
+func (d bd) Create(args ...int) id                     { return lh.CreateDictionary(args...) }
+func (d bd) CreateList(args ...int) il                 { return dh.CreateList(args...) }
+func (d bd) Default(key, defVal itf) itf               { return dh.Default(d, key, defVal) }
+func (d bd) Delete(first itf, rest ...itf) (id, error) { return dh.Delete(d, first, rest) }
+func (d bd) Flush(keys ...itf) id                      { return dh.Flush(d, keys) }
+func (d bd) Get(keys ...itf) itf                       { return dh.Get(d, keys) }
+func (d bd) GetHelpers() (IDictHelper, IListHelper)    { return dh, lh }
+func (d bd) GetKeys() il                               { return dh.GetKeys(d) }
+func (d bd) GetValues() il                             { return dh.GetValues(d) }
+func (d bd) Has(keys ...itf) bool                      { return dh.Has(d, keys) }
+func (d bd) KeysAsString() StringArray                 { return dh.KeysAsString(d) }
+func (d bd) Len() int                                  { return len(d) }
+func (d bd) Merge(first id, rest ...id) id             { return dh.Merge(d, first, rest) }
+func (d bd) Native() itf                               { return must(collections.MarshalGo(d)) }
+func (d bd) Omit(first itf, rest ...itf) id            { return dh.Omit(d, first, rest) }
+func (d bd) Pop(keys ...itf) itf                       { return dh.Pop(d, keys) }
+func (d bd) Set(key, v itf) id                         { return dh.Set(d, key, v) }
+func (d bd) Transpose() id                             { return dh.Transpose(d) }
+func (d bd) TypeName() String                          { return "Yaml" }
+
+// Generic helpers to simplify physical implementation
+var (
+	helper = helperBase{
+		ConvertList:    func(list il) il { return yamlList(list.AsArray()) },
+		ConvertDict:    func(dict id) id { return yamlDict(dict.AsMap()) },
+		NeedConversion: func(object itf, strict bool) bool { return needConversionImpl(object, strict, "Yaml") },
+	}
+	lh = helperList{BaseHelper: helper}
+	dh = helperDict{BaseHelper: helper}
+)
+
+// Imported types
+type (
+	// IGenericList is imported from collections
+	IGenericList = collections.IGenericList
+
+	// IListHelper is imported from collections
+	IListHelper = collections.IListHelper
+
+	// IDictionary is imported from collections
+	IDictionary = collections.IDictionary
+
+	// IDictHelper is imported from collections
+	IDictHelper = collections.IDictionaryHelper
+
 	// String is imported from stringclass
 	String = stringclass.String
+
 	// StringArray is imported from stringclass
 	StringArray = stringclass.StringArray
 )
@@ -152,6 +120,6 @@ type (
 // Imported functions
 var (
 	iif           = collections.IIf
-	TrimmedString = stringclass.TrimmedString
 	must          = errors.Must
+	TrimmedString = stringclass.TrimmedString
 )

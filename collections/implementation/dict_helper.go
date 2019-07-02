@@ -23,12 +23,12 @@ type DictHelper struct {
 }
 
 // AsDictionary returns the object casted as IDictionary.
-func (dh DictHelper) AsDictionary(object interface{}) baseIDict {
-	return must(dh.TryAsDictionary(object)).(baseIDict)
+func (dh DictHelper) AsDictionary(object interface{}) IDictionary {
+	return must(dh.TryAsDictionary(object)).(IDictionary)
 }
 
 // Clone returns a distinct copy of the object with only supplied keys. If no keys are supplied, all keys from d are copied.
-func (dh DictHelper) Clone(dict baseIDict, keys []interface{}) baseIDict {
+func (dh DictHelper) Clone(dict IDictionary, keys []interface{}) IDictionary {
 	if len(keys) == 0 {
 		keys = dict.GetKeys().AsArray()
 	}
@@ -48,7 +48,7 @@ func (dh DictHelper) Clone(dict baseIDict, keys []interface{}) baseIDict {
 }
 
 // Default returns defVal if dictionary doesn't contain key, otherwise, simply returns entry corresponding to key.
-func (dh DictHelper) Default(dict baseIDict, key, defVal interface{}) interface{} {
+func (dh DictHelper) Default(dict IDictionary, key, defVal interface{}) interface{} {
 	if !dict.Has(key) {
 		return defVal
 	}
@@ -56,12 +56,12 @@ func (dh DictHelper) Default(dict baseIDict, key, defVal interface{}) interface{
 }
 
 // Delete removes the entry value associated with key. The entry must exist.
-func (dh DictHelper) Delete(dict baseIDict, keys []interface{}) (baseIDict, error) {
-	return dh.delete(dict, keys, true)
+func (dh DictHelper) Delete(dict IDictionary, first interface{}, rest []interface{}) (IDictionary, error) {
+	return dh.delete(dict, append([]interface{}{first}, rest...), true)
 }
 
 // Flush removes all specified keys from the dictionary. If no key is specified, all keys are removed.
-func (dh DictHelper) Flush(dict baseIDict, keys []interface{}) baseIDict {
+func (dh DictHelper) Flush(dict IDictionary, keys []interface{}) IDictionary {
 	if len(keys) == 0 {
 		keys = dict.GetKeys().AsArray()
 	}
@@ -70,7 +70,7 @@ func (dh DictHelper) Flush(dict baseIDict, keys []interface{}) baseIDict {
 }
 
 // Get returns the value associated with key.
-func (dh DictHelper) Get(dict baseIDict, keys []interface{}) interface{} {
+func (dh DictHelper) Get(dict IDictionary, keys []interface{}) interface{} {
 	switch len(keys) {
 	case 0:
 		return nil
@@ -85,7 +85,7 @@ func (dh DictHelper) Get(dict baseIDict, keys []interface{}) interface{} {
 }
 
 // Has returns true if the dictionary object contains all the keys.
-func (dh DictHelper) Has(dict baseIDict, keys []interface{}) bool {
+func (dh DictHelper) Has(dict IDictionary, keys []interface{}) bool {
 	for _, key := range keys {
 		if _, ok := dict.AsMap()[fmt.Sprint(key)]; !ok {
 			return false
@@ -95,7 +95,7 @@ func (dh DictHelper) Has(dict baseIDict, keys []interface{}) bool {
 }
 
 // GetKeys returns the keys in the dictionary in alphabetical order.
-func (dh DictHelper) GetKeys(dict baseIDict) baseIList {
+func (dh DictHelper) GetKeys(dict IDictionary) IGenericList {
 	keys := dict.KeysAsString()
 	result := dh.CreateList(dict.Len())
 
@@ -106,7 +106,7 @@ func (dh DictHelper) GetKeys(dict baseIDict) baseIList {
 }
 
 // KeysAsString returns the keys in the dictionary in alphabetical order.
-func (dh DictHelper) KeysAsString(dict baseIDict) StringArray {
+func (dh DictHelper) KeysAsString(dict IDictionary) StringArray {
 	keys := make(StringArray, 0, dict.Len())
 	for key := range dict.AsMap() {
 		keys = append(keys, String(key))
@@ -115,7 +115,8 @@ func (dh DictHelper) KeysAsString(dict baseIDict) StringArray {
 }
 
 // Merge merges the other dictionaries into the current dictionary.
-func (dh DictHelper) Merge(target baseIDict, sources []baseIDict) baseIDict {
+func (dh DictHelper) Merge(target IDictionary, first IDictionary, rest []IDictionary) IDictionary {
+	sources := append([]IDictionary{first}, rest...)
 	for i := range sources {
 		if sources[i] == nil {
 			continue
@@ -125,7 +126,7 @@ func (dh DictHelper) Merge(target baseIDict, sources []baseIDict) baseIDict {
 	return target
 }
 
-func (dh DictHelper) deepMerge(target baseIDict, source baseIDict) baseIDict {
+func (dh DictHelper) deepMerge(target IDictionary, source IDictionary) IDictionary {
 	targetMap := target.AsMap()
 	sourceMap := source.AsMap()
 	for key := range sourceMap {
@@ -137,8 +138,8 @@ func (dh DictHelper) deepMerge(target baseIDict, source baseIDict) baseIDict {
 			continue
 		}
 
-		targetValueDict, targetValueIsDict := targetValue.(baseIDict)
-		sourceValueDict, sourceValueIsDict := sourceValue.(baseIDict)
+		targetValueDict, targetValueIsDict := targetValue.(IDictionary)
+		sourceValueDict, sourceValueIsDict := sourceValue.(IDictionary)
 
 		if sourceValueIsDict && targetValueIsDict {
 			targetMap[key] = dh.deepMerge(targetValueDict, sourceValueDict)
@@ -149,7 +150,8 @@ func (dh DictHelper) deepMerge(target baseIDict, source baseIDict) baseIDict {
 }
 
 // Omit returns a distinct copy of the object including all keys except specified ones.
-func (dh DictHelper) Omit(dict baseIDict, keys []interface{}) baseIDict {
+func (dh DictHelper) Omit(dict IDictionary, first interface{}, rest []interface{}) IDictionary {
+	keys := append([]interface{}{first}, rest...)
 	omitKeys := make(map[string]bool, len(keys))
 	for i := range keys {
 		omitKeys[fmt.Sprint(keys[i])] = true
@@ -164,7 +166,7 @@ func (dh DictHelper) Omit(dict baseIDict, keys []interface{}) baseIDict {
 }
 
 // Pop returns and remove the objects with the specified keys.
-func (dh DictHelper) Pop(dict baseIDict, keys []interface{}) interface{} {
+func (dh DictHelper) Pop(dict IDictionary, keys []interface{}) interface{} {
 	if len(keys) == 0 {
 		return nil
 	}
@@ -174,7 +176,7 @@ func (dh DictHelper) Pop(dict baseIDict, keys []interface{}) interface{} {
 }
 
 // Set sets key to value in the dictionary.
-func (dh DictHelper) Set(dict baseIDict, key interface{}, value interface{}) baseIDict {
+func (dh DictHelper) Set(dict IDictionary, key interface{}, value interface{}) IDictionary {
 	if dict.AsMap() == nil {
 		dict = dh.CreateDictionary()
 	}
@@ -183,7 +185,7 @@ func (dh DictHelper) Set(dict baseIDict, key interface{}, value interface{}) bas
 }
 
 // Add adds value to an existing key instead of replacing the value as done by set.
-func (dh DictHelper) Add(dict baseIDict, key interface{}, value interface{}) baseIDict {
+func (dh DictHelper) Add(dict IDictionary, key interface{}, value interface{}) IDictionary {
 	if dict.AsMap() == nil {
 		dict = dh.CreateDictionary()
 	}
@@ -204,7 +206,7 @@ func (dh DictHelper) Add(dict baseIDict, key interface{}, value interface{}) bas
 }
 
 // GetValues returns the values in the dictionary in key alphabetical order.
-func (dh DictHelper) GetValues(dict baseIDict) baseIList {
+func (dh DictHelper) GetValues(dict IDictionary) IGenericList {
 	result := dh.CreateList(dict.Len())
 	for i, key := range dict.KeysAsString() {
 		result.Set(i, dict.Get(key))
@@ -214,7 +216,7 @@ func (dh DictHelper) GetValues(dict baseIDict) baseIList {
 
 // Transpose returns a dictionary with values as keys and keys as values. The resulting dictionary
 // is a dictionary where each key could contains single value or list of values if there are multiple matches.
-func (dh DictHelper) Transpose(dict baseIDict) baseIDict {
+func (dh DictHelper) Transpose(dict IDictionary) IDictionary {
 	result := dh.CreateDictionary()
 	for _, key := range dict.GetKeys().AsArray() {
 		value := dict.Get(key)
@@ -230,7 +232,7 @@ func (dh DictHelper) Transpose(dict baseIDict) baseIDict {
 	return result
 }
 
-func (dh DictHelper) delete(dict baseIDict, keys []interface{}, mustExist bool) (baseIDict, error) {
+func (dh DictHelper) delete(dict IDictionary, keys []interface{}, mustExist bool) (IDictionary, error) {
 	for i := range keys {
 		if mustExist && !dict.Has(keys[i]) {
 			return dict, fmt.Errorf("key %v not found", keys[i])
@@ -242,6 +244,6 @@ func (dh DictHelper) delete(dict baseIDict, keys []interface{}, mustExist bool) 
 
 // Register the default implementation of dictionary helper
 var _ = func() int {
-	collections.DictionaryHelper = baseDictHelper
+	collections.DictionaryHelper = dh
 	return 0
 }()

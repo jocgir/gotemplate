@@ -10,7 +10,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/errors"
 	"github.com/coveooss/gotemplate/v3/hcl"
 	"github.com/coveooss/gotemplate/v3/json"
@@ -141,18 +140,14 @@ func runGotemplate() (exitCode int) {
 	if mode := *typeMode; mode != "" {
 		switch strings.ToUpper(mode[:1]) {
 		case "Y":
-			collections.ListHelper = yaml.GenericListHelper
-			collections.DictionaryHelper = yaml.DictionaryHelper
+			yaml.SetAsDefault()
 		case "H":
-			collections.ListHelper = hcl.GenericListHelper
-			collections.DictionaryHelper = hcl.DictionaryHelper
+			hcl.SetAsDefault()
 		case "J":
-			collections.ListHelper = json.GenericListHelper
-			collections.DictionaryHelper = json.DictionaryHelper
+			json.SetAsDefault()
 		}
 	} else {
-		collections.ListHelper = json.GenericListHelper
-		collections.DictionaryHelper = json.DictionaryHelper
+		json.SetAsDefault()
 	}
 
 	optionsSet[template.RenderingDisabled] = *disableRender

@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/json"
 	logging "github.com/op/go-logging"
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -41,8 +40,7 @@ func TestTemplate_applyRazor(t *testing.T) {
 		return path
 	}
 
-	collections.ListHelper = json.GenericListHelper
-	collections.DictionaryHelper = json.DictionaryHelper
+	json.SetAsDefault()
 	template.options[AcceptNoValue] = true
 
 	load := func(path string) []byte { return must(ioutil.ReadFile(path)).([]byte) }

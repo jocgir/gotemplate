@@ -10,141 +10,109 @@ import (
 	"github.com/coveooss/gotemplate/v3/stringclass"
 )
 
-// List implementation of IGenericList for xmlList
-type List = xmlList
-type xmlIList = collections.IGenericList
-type xmlList []interface{}
-
-func (l xmlList) AsArray() []interface{} { return []interface{}(l) }
-func (l xmlList) Cap() int               { return cap(l) }
-func (l xmlList) Capacity() int          { return cap(l) }
-func (l xmlList) Clone() xmlIList        { return xmlListHelper.Clone(l) }
-func (l xmlList) Contains(values ...interface{}) bool {
-	return xmlListHelper.Contains(l, values...)
-}
-func (l xmlList) Count() int                  { return len(l) }
-func (l xmlList) Create(args ...int) xmlIList { return xmlListHelper.CreateList(args...) }
-func (l xmlList) CreateDict(args ...int) xmlIDict {
-	return xmlListHelper.CreateDictionary(args...)
-}
-func (l xmlList) First() interface{} { return xmlListHelper.GetIndexes(l, 0) }
-func (l xmlList) Get(indexes ...int) interface{} {
-	return xmlListHelper.GetIndexes(l, indexes...)
-}
-func (l xmlList) Has(values ...interface{}) bool   { return l.Contains(values...) }
-func (l xmlList) Join(sep interface{}) String      { return l.StringArray().Join(sep) }
-func (l xmlList) Last() interface{}                { return xmlListHelper.GetIndexes(l, len(l)-1) }
-func (l xmlList) Len() int                         { return len(l) }
-func (l xmlList) New(args ...interface{}) xmlIList { return xmlListHelper.NewList(args...) }
-func (l xmlList) Reverse() xmlIList                { return xmlListHelper.Reverse(l) }
-func (l xmlList) StringArray() StringArray         { return xmlListHelper.GetStringArray(l) }
-func (l xmlList) Strings() []string                { return xmlListHelper.GetStrings(l) }
-func (l xmlList) TypeName() String                 { return "Xml" }
-func (l xmlList) Unique() xmlIList                 { return xmlListHelper.Unique(l) }
-
-func (l xmlList) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
-	return xmlDictHelper, xmlListHelper
-}
-
-func (l xmlList) Append(values ...interface{}) xmlIList {
-	return xmlListHelper.Add(l, false, values...)
-}
-
-func (l xmlList) Intersect(values ...interface{}) xmlIList {
-	return xmlListHelper.Intersect(l, values...)
-}
-
-func (l xmlList) Pop(indexes ...int) (interface{}, xmlIList) {
-	if len(indexes) == 0 {
-		indexes = []int{len(l) - 1}
-	}
-	return l.Get(indexes...), l.Remove(indexes...)
-}
-
-func (l xmlList) Prepend(values ...interface{}) xmlIList {
-	return xmlListHelper.Add(l, true, values...)
-}
-
-func (l xmlList) Remove(indexes ...int) xmlIList {
-	return xmlListHelper.Remove(l, indexes...)
-}
-
-func (l xmlList) Set(i int, v interface{}) (xmlIList, error) {
-	return xmlListHelper.SetIndex(l, i, v)
-}
-
-func (l xmlList) Union(values ...interface{}) xmlIList {
-	return xmlListHelper.Add(l, false, values...).Unique()
-}
-
-func (l xmlList) Without(values ...interface{}) xmlIList {
-	return xmlListHelper.Without(l, values...)
-}
-
-// Dictionary implementation of IDictionary for xmlDict
-type Dictionary = xmlDict
-type xmlIDict = collections.IDictionary
-type xmlDict map[string]interface{}
-
-func (d xmlDict) Add(key, v interface{}) xmlIDict     { return xmlDictHelper.Add(d, key, v) }
-func (d xmlDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
-func (d xmlDict) Clone(keys ...interface{}) xmlIDict  { return xmlDictHelper.Clone(d, keys) }
-func (d xmlDict) Count() int                          { return len(d) }
-func (d xmlDict) Create(args ...int) xmlIDict         { return xmlListHelper.CreateDictionary(args...) }
-func (d xmlDict) CreateList(args ...int) xmlIList     { return xmlHelper.CreateList(args...) }
-func (d xmlDict) Flush(keys ...interface{}) xmlIDict  { return xmlDictHelper.Flush(d, keys) }
-func (d xmlDict) Get(keys ...interface{}) interface{} { return xmlDictHelper.Get(d, keys) }
-func (d xmlDict) GetKeys() xmlIList                   { return xmlDictHelper.GetKeys(d) }
-func (d xmlDict) GetValues() xmlIList                 { return xmlDictHelper.GetValues(d) }
-func (d xmlDict) Has(keys ...interface{}) bool        { return xmlDictHelper.Has(d, keys) }
-func (d xmlDict) KeysAsString() StringArray           { return xmlDictHelper.KeysAsString(d) }
-func (d xmlDict) Len() int                            { return len(d) }
-func (d xmlDict) Native() interface{}                 { return must(collections.MarshalGo(d)) }
-func (d xmlDict) Pop(keys ...interface{}) interface{} { return xmlDictHelper.Pop(d, keys) }
-func (d xmlDict) Set(key, v interface{}) xmlIDict     { return xmlDictHelper.Set(d, key, v) }
-func (d xmlDict) Transpose() xmlIDict                 { return xmlDictHelper.Transpose(d) }
-func (d xmlDict) TypeName() String                    { return "Xml" }
-
-func (d xmlDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
-	return xmlDictHelper, xmlListHelper
-}
-
-func (d xmlDict) Default(key, defVal interface{}) interface{} {
-	return xmlDictHelper.Default(d, key, defVal)
-}
-
-func (d xmlDict) Delete(key interface{}, otherKeys ...interface{}) (xmlIDict, error) {
-	return xmlDictHelper.Delete(d, append([]interface{}{key}, otherKeys...))
-}
-
-func (d xmlDict) Merge(dict xmlIDict, otherDicts ...xmlIDict) xmlIDict {
-	return xmlDictHelper.Merge(d, append([]xmlIDict{dict}, otherDicts...))
-}
-
-func (d xmlDict) Omit(key interface{}, otherKeys ...interface{}) xmlIDict {
-	return xmlDictHelper.Omit(d, append([]interface{}{key}, otherKeys...))
-}
-
-// Generic helpers to simplify physical implementation
-func xmlListConvert(list xmlIList) xmlIList { return xmlList(list.AsArray()) }
-func xmlDictConvert(dict xmlIDict) xmlIDict { return xmlDict(dict.AsMap()) }
-func needConversion(object interface{}, strict bool) bool {
-	return needConversionImpl(object, strict, "Xml")
-}
-
-var xmlHelper = helperBase{ConvertList: xmlListConvert, ConvertDict: xmlDictConvert, NeedConversion: needConversion}
-var xmlListHelper = helperList{BaseHelper: xmlHelper}
-var xmlDictHelper = helperDict{BaseHelper: xmlHelper}
-
-// DictionaryHelper gives public access to the basic dictionary functions
-var DictionaryHelper collections.IDictionaryHelper = xmlDictHelper
-
-// GenericListHelper gives public access to the basic list functions
-var GenericListHelper collections.IListHelper = xmlListHelper
+// SetAsDefault configure the current implementation as default list & dictionary manager.
+func SetAsDefault() { collections.ListHelper, collections.DictionaryHelper = lh, dh }
 
 type (
+	itf = interface{}
+
+	// List is the xml implementation of IGenericList
+	List    = xmlList
+	xmlList []itf
+	il      = IGenericList
+	bl      = xmlList
+
+	// Dictionary is the xml implementation of IDictionary
+	Dictionary = xmlDict
+	xmlDict    map[string]itf
+	id         = IDictionary
+	bd         = xmlDict
+)
+
+// List implementation
+func (l bl) Append(values ...itf) il                { return lh.Add(l, false, values...) }
+func (l bl) AsArray() []itf                         { return []itf(l) }
+func (l bl) Cap() int                               { return cap(l) }
+func (l bl) Capacity() int                          { return cap(l) }
+func (l bl) Clone() il                              { return lh.Clone(l) }
+func (l bl) Contains(values ...itf) bool            { return lh.Contains(l, values...) }
+func (l bl) Count() int                             { return len(l) }
+func (l bl) Create(args ...int) il                  { return lh.CreateList(args...) }
+func (l bl) CreateDict(args ...int) id              { return lh.CreateDictionary(args...) }
+func (l bl) First() itf                             { return lh.GetIndexes(l, 0) }
+func (l bl) Get(indexes ...int) itf                 { return lh.GetIndexes(l, indexes...) }
+func (l bl) GetHelpers() (IDictHelper, IListHelper) { return dh, lh }
+func (l bl) Has(values ...itf) bool                 { return l.Contains(values...) }
+func (l bl) Intersect(values ...itf) il             { return lh.Intersect(l, values...) }
+func (l bl) Join(sep itf) String                    { return l.StringArray().Join(sep) }
+func (l bl) Last() itf                              { return lh.GetIndexes(l, len(l)-1) }
+func (l bl) Len() int                               { return len(l) }
+func (l bl) New(args ...itf) il                     { return lh.NewList(args...) }
+func (l bl) Pop(indexes ...int) (itf, il)           { return lh.Pop(l, indexes...) }
+func (l bl) Prepend(values ...itf) il               { return lh.Add(l, true, values...) }
+func (l bl) Remove(indexes ...int) il               { return lh.Remove(l, indexes...) }
+func (l bl) Reverse() il                            { return lh.Reverse(l) }
+func (l bl) Set(i int, v itf) (il, error)           { return lh.SetIndex(l, i, v) }
+func (l bl) StringArray() StringArray               { return lh.GetStringArray(l) }
+func (l bl) Strings() []string                      { return lh.GetStrings(l) }
+func (l bl) TypeName() String                       { return "Xml" }
+func (l bl) Union(values ...itf) il                 { return lh.Add(l, false, values...).Unique() }
+func (l bl) Unique() il                             { return lh.Unique(l) }
+func (l bl) Without(values ...itf) il               { return lh.Without(l, values...) }
+
+// Dictionary implementation
+func (d bd) Add(key, v itf) id                         { return dh.Add(d, key, v) }
+func (d bd) AsMap() map[string]itf                     { return (map[string]itf)(d) }
+func (d bd) Clone(keys ...itf) id                      { return dh.Clone(d, keys) }
+func (d bd) Count() int                                { return len(d) }
+func (d bd) Create(args ...int) id                     { return lh.CreateDictionary(args...) }
+func (d bd) CreateList(args ...int) il                 { return dh.CreateList(args...) }
+func (d bd) Default(key, defVal itf) itf               { return dh.Default(d, key, defVal) }
+func (d bd) Delete(first itf, rest ...itf) (id, error) { return dh.Delete(d, first, rest) }
+func (d bd) Flush(keys ...itf) id                      { return dh.Flush(d, keys) }
+func (d bd) Get(keys ...itf) itf                       { return dh.Get(d, keys) }
+func (d bd) GetHelpers() (IDictHelper, IListHelper)    { return dh, lh }
+func (d bd) GetKeys() il                               { return dh.GetKeys(d) }
+func (d bd) GetValues() il                             { return dh.GetValues(d) }
+func (d bd) Has(keys ...itf) bool                      { return dh.Has(d, keys) }
+func (d bd) KeysAsString() StringArray                 { return dh.KeysAsString(d) }
+func (d bd) Len() int                                  { return len(d) }
+func (d bd) Merge(first id, rest ...id) id             { return dh.Merge(d, first, rest) }
+func (d bd) Native() itf                               { return must(collections.MarshalGo(d)) }
+func (d bd) Omit(first itf, rest ...itf) id            { return dh.Omit(d, first, rest) }
+func (d bd) Pop(keys ...itf) itf                       { return dh.Pop(d, keys) }
+func (d bd) Set(key, v itf) id                         { return dh.Set(d, key, v) }
+func (d bd) Transpose() id                             { return dh.Transpose(d) }
+func (d bd) TypeName() String                          { return "Xml" }
+
+// Generic helpers to simplify physical implementation
+var (
+	helper = helperBase{
+		ConvertList:    func(list il) il { return xmlList(list.AsArray()) },
+		ConvertDict:    func(dict id) id { return xmlDict(dict.AsMap()) },
+		NeedConversion: func(object itf, strict bool) bool { return needConversionImpl(object, strict, "Xml") },
+	}
+	lh = helperList{BaseHelper: helper}
+	dh = helperDict{BaseHelper: helper}
+)
+
+// Imported types
+type (
+	// IGenericList is imported from collections
+	IGenericList = collections.IGenericList
+
+	// IListHelper is imported from collections
+	IListHelper = collections.IListHelper
+
+	// IDictionary is imported from collections
+	IDictionary = collections.IDictionary
+
+	// IDictHelper is imported from collections
+	IDictHelper = collections.IDictionaryHelper
+
 	// String is imported from stringclass
 	String = stringclass.String
+
 	// StringArray is imported from stringclass
 	StringArray = stringclass.StringArray
 )
@@ -152,6 +120,6 @@ type (
 // Imported functions
 var (
 	iif           = collections.IIf
-	TrimmedString = stringclass.TrimmedString
 	must          = errors.Must
+	TrimmedString = stringclass.TrimmedString
 )

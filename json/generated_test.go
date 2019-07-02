@@ -14,16 +14,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var strFixture = jsonList(jsonListHelper.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
+var strFixture = jsonList(lh.NewStringList(strings.Split("Hello World, I'm Foo Bar!", " ")...).AsArray())
 
 func Test_list_Append(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name   string
-		l      jsonIList
+		l      IGenericList
 		values []interface{}
-		want   jsonIList
+		want   IGenericList
 	}{
 		{"Empty", jsonList{}, []interface{}{1, 2, 3}, jsonList{1, 2, 3}},
 		{"List of int", jsonList{1, 2, 3}, []interface{}{4, 5}, jsonList{1, 2, 3, 4, 5}},
@@ -44,9 +44,9 @@ func Test_list_Prepend(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		l      jsonIList
+		l      IGenericList
 		values []interface{}
-		want   jsonIList
+		want   IGenericList
 	}{
 		{"Empty", jsonList{}, []interface{}{1, 2, 3}, jsonList{1, 2, 3}},
 		{"List of int", jsonList{1, 2, 3}, []interface{}{4, 5}, jsonList{4, 5, 1, 2, 3}},
@@ -109,10 +109,10 @@ func Test_list_Capacity(t *testing.T) {
 
 	tests := []struct {
 		name string
-		l    jsonIList
+		l    IGenericList
 		want int
 	}{
-		{"Empty List with 100 spaces", jsonListHelper.CreateList(0, 100), 100},
+		{"Empty List with 100 spaces", lh.CreateList(0, 100), 100},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -132,7 +132,7 @@ func Test_list_Clone(t *testing.T) {
 	tests := []struct {
 		name string
 		l    jsonList
-		want jsonIList
+		want IGenericList
 	}{
 		{"Empty List", jsonList{}, jsonList{}},
 		{"List of int", jsonList{1, 2, 3}, jsonList{1, 2, 3}},
@@ -204,7 +204,7 @@ func Test_CreateList(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []int
-		want    jsonIList
+		want    IGenericList
 		wantErr bool
 	}{
 		{"Empty", nil, jsonList{}, false},
@@ -216,7 +216,7 @@ func Test_CreateList(t *testing.T) {
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() { err = errors.Trap(err, recover()) }()
-			got := jsonListHelper.CreateList(tt.args...)
+			got := lh.CreateList(tt.args...)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CreateList():\n got %[1]v (%[1]T)\nwant %[2]v (%[2]T)", got, tt.want)
 			}
@@ -237,12 +237,12 @@ func Test_list_Create(t *testing.T) {
 		name string
 		l    jsonList
 		args []int
-		want jsonIList
+		want IGenericList
 	}{
 		{"Empty", nil, nil, jsonList{}},
 		{"Existing List", jsonList{1, 2}, nil, jsonList{}},
 		{"With Empty spaces", jsonList{1, 2}, []int{5}, jsonList{nil, nil, nil, nil, nil}},
-		{"With Capacity", jsonList{1, 2}, []int{0, 5}, jsonListHelper.CreateList(0, 5)},
+		{"With Capacity", jsonList{1, 2}, []int{0, 5}, lh.CreateList(0, 5)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -264,7 +264,7 @@ func Test_list_New(t *testing.T) {
 		name string
 		l    jsonList
 		args []interface{}
-		want jsonIList
+		want IGenericList
 	}{
 		{"Empty", nil, nil, jsonList{}},
 		{"Existing List", jsonList{1, 2}, nil, jsonList{}},
@@ -290,7 +290,7 @@ func Test_list_CreateDict(t *testing.T) {
 		name    string
 		l       jsonList
 		args    []int
-		want    jsonIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, nil, jsonDict{}, false},
@@ -505,7 +505,7 @@ func Test_list_Reverse(t *testing.T) {
 	tests := []struct {
 		name string
 		l    jsonList
-		want jsonIList
+		want IGenericList
 	}{
 		{"Empty List", jsonList{}, jsonList{}},
 		{"List of int", jsonList{1, 2, 3}, jsonList{3, 2, 1}},
@@ -530,9 +530,9 @@ func Test_list_Set(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		l       jsonIList
+		l       IGenericList
 		args    args
-		want    jsonIList
+		want    IGenericList
 		wantErr bool
 	}{
 		{"Empty", jsonList{}, args{2, 1}, jsonList{nil, nil, 1}, false},
@@ -570,9 +570,9 @@ var mapFixture = map[string]interface{}{
 	},
 }
 
-var dictFixture = jsonDict(jsonDictHelper.AsDictionary(mapFixture).AsMap())
+var dictFixture = jsonDict(dh.AsDictionary(mapFixture).AsMap())
 
-func dumpKeys(t *testing.T, d1, d2 jsonIDict) {
+func dumpKeys(t *testing.T, d1, d2 IDictionary) {
 	t.Parallel()
 
 	for key := range d1.AsMap() {
@@ -612,7 +612,7 @@ func Test_dict_Clone(t *testing.T) {
 		name string
 		d    jsonDict
 		keys []interface{}
-		want jsonIDict
+		want IDictionary
 	}{
 		{"Nil", nil, nil, jsonDict{}},
 		{"Empty", jsonDict{}, nil, jsonDict{}},
@@ -649,7 +649,7 @@ func Test_JsonDict_CreateList(t *testing.T) {
 		name         string
 		d            jsonDict
 		args         []int
-		want         jsonIList
+		want         IGenericList
 		wantLen      int
 		wantCapacity int
 	}{
@@ -680,7 +680,7 @@ func Test_dict_Create(t *testing.T) {
 		name    string
 		d       jsonDict
 		args    []int
-		want    jsonIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, nil, jsonDict{}, false},
@@ -741,7 +741,7 @@ func Test_dict_Delete(t *testing.T) {
 		name    string
 		d       jsonDict
 		args    args
-		want    jsonIDict
+		want    IDictionary
 		wantErr bool
 	}{
 		{"Empty", nil, args{}, jsonDict{}, true},
@@ -773,7 +773,7 @@ func Test_dict_Flush(t *testing.T) {
 		name string
 		d    jsonDict
 		keys []interface{}
-		want jsonIDict
+		want IDictionary
 	}{
 		{"Empty", nil, nil, jsonDict{}},
 		{"Map", dictFixture, nil, jsonDict{}},
@@ -803,7 +803,7 @@ func Test_dict_Keys(t *testing.T) {
 	tests := []struct {
 		name string
 		d    jsonDict
-		want jsonIList
+		want IGenericList
 	}{
 		{"Empty", nil, jsonList{}},
 		{"Map", dictFixture, jsonList{String("float"), String("int"), String("list"), String("listInt"), String("map"), String("mapInt"), String("string")}},
@@ -854,23 +854,23 @@ func Test_dict_Merge(t *testing.T) {
 		},
 	}
 	type args struct {
-		jsonDict jsonIDict
-		dicts    []jsonIDict
+		jsonDict IDictionary
+		dicts    []IDictionary
 	}
 	tests := []struct {
 		name string
 		d    jsonDict
 		args args
-		want jsonIDict
+		want IDictionary
 	}{
-		{"Empty", nil, args{nil, []jsonIDict{}}, jsonDict{}},
-		{"Add map to empty", nil, args{dictFixture, []jsonIDict{}}, dictFixture},
-		{"Add map to same map", dictFixture, args{dictFixture, []jsonIDict{}}, dictFixture},
-		{"Add empty to map", dictFixture, args{nil, []jsonIDict{}}, dictFixture},
-		{"Add new1 to map", dictFixture, args{adding1, []jsonIDict{}}, dictFixture.Clone().Merge(adding1)},
-		{"Add new2 to map", dictFixture, args{adding2, []jsonIDict{}}, dictFixture.Clone().Merge(adding2)},
-		{"Add new1 & new2 to map", dictFixture, args{adding1, []jsonIDict{adding2}}, dictFixture.Clone().Merge(adding1, adding2)},
-		{"Add new1 & new2 to map", dictFixture, args{adding1, []jsonIDict{adding2}}, dictFixture.Clone().Merge(adding1).Merge(adding2)},
+		{"Empty", nil, args{nil, []IDictionary{}}, jsonDict{}},
+		{"Add map to empty", nil, args{dictFixture, []IDictionary{}}, dictFixture},
+		{"Add map to same map", dictFixture, args{dictFixture, []IDictionary{}}, dictFixture},
+		{"Add empty to map", dictFixture, args{nil, []IDictionary{}}, dictFixture},
+		{"Add new1 to map", dictFixture, args{adding1, []IDictionary{}}, dictFixture.Clone().Merge(adding1)},
+		{"Add new2 to map", dictFixture, args{adding2, []IDictionary{}}, dictFixture.Clone().Merge(adding2)},
+		{"Add new1 & new2 to map", dictFixture, args{adding1, []IDictionary{adding2}}, dictFixture.Clone().Merge(adding1, adding2)},
+		{"Add new1 & new2 to map", dictFixture, args{adding1, []IDictionary{adding2}}, dictFixture.Clone().Merge(adding1).Merge(adding2)},
 	}
 	for _, tt := range tests {
 		go t.Run(tt.name, func(t *testing.T) {
@@ -890,7 +890,7 @@ func Test_dict_Values(t *testing.T) {
 	tests := []struct {
 		name string
 		d    jsonDict
-		want jsonIList
+		want IGenericList
 	}{
 		{"Empty", nil, jsonList{}},
 		{"Map", dictFixture, jsonList{1.23, 123, jsonList{1, "two"}, jsonList{1, 2, 3}, jsonDict{"sub1": 1, "sub2": "two"}, jsonDict{"1": 1, "2": "two"}, "Foo bar"}},
@@ -912,7 +912,7 @@ func Test_dict_Pop(t *testing.T) {
 		d          jsonDict
 		args       []interface{}
 		want       interface{}
-		wantObject jsonIDict
+		wantObject IDictionary
 	}{
 		{"Nil", dictFixture, nil, nil, dictFixture},
 		{"Pop one element", dictFixture, []interface{}{"float"}, 1.23, dictFixture.Omit("float")},
@@ -944,7 +944,7 @@ func Test_dict_Add(t *testing.T) {
 		name string
 		d    jsonDict
 		args args
-		want jsonIDict
+		want IDictionary
 	}{
 		{"Empty", nil, args{"A", 1}, jsonDict{"A": 1}},
 		{"With element", jsonDict{"A": 1}, args{"A", 2}, jsonDict{"A": jsonList{1, 2}}},
@@ -971,7 +971,7 @@ func Test_dict_Set(t *testing.T) {
 		name string
 		d    jsonDict
 		args args
-		want jsonIDict
+		want IDictionary
 	}{
 		{"Empty", nil, args{"A", 1}, jsonDict{"A": 1}},
 		{"With element", jsonDict{"A": 1}, args{"A", 2}, jsonDict{"A": 2}},
@@ -992,7 +992,7 @@ func Test_dict_Transpose(t *testing.T) {
 	tests := []struct {
 		name string
 		d    jsonDict
-		want jsonIDict
+		want IDictionary
 	}{
 		{"Empty", nil, jsonDict{}},
 		{"Base", jsonDict{"A": 1}, jsonDict{"1": String("A")}},
@@ -1055,12 +1055,12 @@ func Test_Json_TypeName(t *testing.T) {
 func Test_Json_GetHelper(t *testing.T) {
 	t.Run("list", func(t *testing.T) {
 		gotD, gotL := jsonList{}.GetHelpers()
-		assert.Equal(t, gotD.CreateDictionary().TypeName(), jsonDictHelper.CreateDictionary().TypeName())
-		assert.Equal(t, gotL.CreateList().TypeName(), jsonListHelper.CreateList().TypeName())
+		assert.Equal(t, gotD.CreateDictionary().TypeName(), dh.CreateDictionary().TypeName())
+		assert.Equal(t, gotL.CreateList().TypeName(), lh.CreateList().TypeName())
 	})
 	t.Run("dict", func(t *testing.T) {
 		gotD, gotL := jsonDict{}.GetHelpers()
-		assert.Equal(t, gotD.CreateDictionary().TypeName(), jsonDictHelper.CreateDictionary().TypeName())
-		assert.Equal(t, gotL.CreateList().TypeName(), jsonListHelper.CreateList().TypeName())
+		assert.Equal(t, gotD.CreateDictionary().TypeName(), dh.CreateDictionary().TypeName())
+		assert.Equal(t, gotL.CreateList().TypeName(), lh.CreateList().TypeName())
 	})
 }

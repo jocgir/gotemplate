@@ -52,18 +52,18 @@ func transform(out interface{}) {
 	result := transformElement(reflect.ValueOf(out).Elem().Interface())
 	if _, isMap := out.(*map[string]interface{}); isMap {
 		// If the result is expected to be map[string]interface{}, we convert it back from internal dict type.
-		result = result.(xmlIDict).Native()
+		result = result.(IDictionary).Native()
 	}
 	reflect.ValueOf(out).Elem().Set(reflect.ValueOf(result))
 }
 
 func transformElement(source interface{}) interface{} {
-	if value, err := xmlHelper.TryAsDictionary(source); err == nil {
+	if value, err := helper.TryAsDictionary(source); err == nil {
 		for _, key := range value.KeysAsString() {
 			value.Set(key, transformElement(value.Get(key)))
 		}
 		source = value
-	} else if value, err := xmlHelper.TryAsList(source); err == nil {
+	} else if value, err := helper.TryAsList(source); err == nil {
 		for i, sub := range value.AsArray() {
 			value.Set(i, transformElement(sub))
 		}
@@ -85,5 +85,5 @@ type (
 
 var needConversionImpl = implementation.NeedConversion
 
-//go:generate genny -pkg=xml -in=../collections/implementation/generic.go -out=generated_impl.go gen "ListTypeName=List DictTypeName=Dictionary base=xml"
-//go:generate genny -pkg=xml -in=../collections/implementation/generic_test.go -out=generated_test.go gen "base=xml"
+//go:generate genny -pkg=xml -in=../collections/implementation/generic.go -out=generated_impl.go gen base=xml
+//go:generate genny -pkg=xml -in=../collections/implementation/generic_test.go -out=generated_test.go gen base=xml
