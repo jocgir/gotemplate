@@ -63,13 +63,13 @@ func runGotemplate() (exitCode int) {
 		logFilePath          = app.Flag("internal-log-file-path", "Set a file where verbose logs should be written").PlaceHolder("path").Short('F').String()
 		templateLogFileLevel = app.Flag("template-log-file-level", "Set the template logging level for the verbose logs file").Default(logrus.TraceLevel).PlaceHolder("level").String()
 		internalLogFileLevel = app.Flag("internal-log-file-level", "Set the internal logging level for the verbose logs file").Default(logrus.DebugLevel).PlaceHolder("level").String()
+		varFiles        = app.Flag("import", "Import variables files (could be any of YAML, JSON or HCL format)").PlaceHolder("file").Short('i').Strings()
+		varFilesIfExist = app.Flag("import-if-exist", "Import variables files (do not consider missing file as an error)").PlaceHolder("file").Strings()
+		namedVars       = app.Flag("var", "Import named variables (if value is a file, the content is loaded)").PlaceHolder("values").Short('V').Strings()
+		typeMode        = app.Flag("type", "Force the type used for the main context (Json, Yaml, Hcl)").Short('T').Enum("Hcl", "h", "hcl", "H", "HCL", "Json", "j", "json", "J", "JSON", "Yaml", "Yml", "y", "yml", "yaml", "Y", "YML", "YAML")
 
 		run                 = app.Command("run", "").Default()
 		delimiters          = run.Flag("delimiters", "Define the default delimiters for go template (separate the left, right and razor delimiters by a comma)").Alias("del").PlaceHolder("{{,}},@").String()
-		varFiles            = run.Flag("import", "Import variables files (could be any of YAML, JSON or HCL format)").PlaceHolder("file").Short('i').Strings()
-		varFilesIfExist     = run.Flag("import-if-exist", "Import variables files (do not consider missing file as an error)").PlaceHolder("file").Strings()
-		namedVars           = run.Flag("var", "Import named variables (if value is a file, the content is loaded)").PlaceHolder("values").Short('V').Strings()
-		typeMode            = run.Flag("type", "Force the type used for the main context (Json, Yaml, Hcl)").Short('t').Enum("Hcl", "h", "hcl", "H", "HCL", "Json", "j", "json", "J", "JSON", "Yaml", "Yml", "y", "yml", "yaml", "Y", "YML", "YAML")
 		includePatterns     = run.Flag("patterns", "Additional patterns that should be processed by gotemplate").PlaceHolder("pattern").Short('p').Strings()
 		excludedPatterns    = run.Flag("exclude", "Exclude file patterns (comma separated) when applying gotemplate recursively").PlaceHolder("pattern").Short('e').Strings()
 		overwrite           = run.Flag("overwrite", "Overwrite file instead of renaming them if they exist (required only if source folder is the same as the target folder)").Short('o').Bool()
@@ -97,6 +97,8 @@ func runGotemplate() (exitCode int) {
 		listAll       = list.Flag("all", "List all").Short('a').NoEnvar().Bool()
 		listCategory  = list.Flag("category", "Group functions by category").Short('c').NoEnvar().Bool()
 		listFilters   = list.Arg("filters", "List only functions that contains one of the filter").Strings()
+
+		console = app.Command("console", "Use gotemplate in an interactive mode")
 	)
 
 	loadAllAddins := true
@@ -251,7 +253,10 @@ func runGotemplate() (exitCode int) {
 	}
 	t.TempFolder(tempFolder)
 
-	if command == list.FullCommand() {
+	switch command {
+	case console.FullCommand():
+		t.Console()
+	case list.FullCommand():
 		if !(*listFunctions || *listTemplates) {
 			// If neither list functions or templates is selected, we default to list functions
 			*listFunctions = true
