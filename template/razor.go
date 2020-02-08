@@ -45,9 +45,7 @@ var customMetaclass = [][2]string{
 	{"[sp]", `[[:blank:]]*`},                                      // Optional spaces
 	{"[id]", `[\p{L}\d_]+`},                                       // Go language id
 	{"[id_comp]", `[\p{L}\d_\.]+`},                                // Go language id with .
-	{"[flexible_id]", `[map_id;][map_id;\.\-]*`},                  // Id with additional character that could be used to create variables in maps
 	{"[idSel]", `[\p{L}_][\p{L}\d_\.]*`},                          // Id with optional selection (object.selection.subselection)
-	{"map_id;", `\p{L}\d_\+\*%#!~`},                               // Id with additional character that could be used to create variables in maps
 
 	{"assign_op;", `:=|~=|=|\+=|-=|\*=|\/=|÷=|%=|&=|\|=|\^=|<<=|«=|>>=|»=|&\^=`}, // Assignment operator
 }
@@ -89,7 +87,7 @@ var expressions = [][]interface{}{
 	{"various ends", `@reduce;(?P<command>end[sp](if|range|define|block|with|for[sp]each|for|))endexpr;`, "{{${reduce1} end ${reduce2}}}"},
 
 	// Assignations
-	{"Assign - @var := value", `(?P<type>@(\$|\.|\$\.)?)(?P<id>[flexible_id])[sp](?P<assign>assign_op;)[sp](?P<expr>[expr]+)endexpr;`, ``, replacementFunc(assignExpression)},
+	{"Assign - @var := value", `(?P<type>@(\$\.?|\.)?)(?P<id>[id_comp])[sp](?P<assign>assign_op;)[sp](?P<expr>[expr]+)endexpr;`, ``, replacementFunc(assignExpression)},
 	{"Assign - @{var} := value", `(?P<type>@{)(?P<id>[id_comp])}[sp](?P<assign>assign_op;)[sp](?P<expr>[expr]+)endexpr;`, ``, replacementFunc(assignExpression)},
 	{"Assign - @{var := expr}", `(?P<type>@{)(?P<id>[id_comp])[sp](?P<assign>assign_op;)[sp](?P<expr>[expr]+?)}endexpr;`, ``, replacementFunc(assignExpressionAcceptError)},
 
@@ -104,12 +102,8 @@ var expressions = [][]interface{}{
 	{"Global variables followed by expression", `@reduce;(?P<expr>[idSel]selector;index;?)(?P<end>endexpr;)`, `@${reduce}(${expr});`, replacementFunc(expressionParserSkipError)},
 	{"Context variables - @.var", `@reduce;\.(?P<name>[idSel])endexpr;`, `@${reduce}(.${name})`},
 	{"Global variables with slice - @var[...]", `@reduce;(?P<name>[idSel])index;endexpr;`, `{{${reduce1} ${slicer} $$.${name} ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
-	{"Context variables special with slice", `@reduce;\.(?P<expr>(?P<name>[flexible_id])index;)endexpr;`, `{{${reduce1} ${slicer} (get . "${name}") ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
-	{"Global variables special with slice", `@reduce;(?P<expr>(?P<name>[flexible_id])index;)endexpr;`, `{{${reduce1} ${slicer} (get $$ "${name}") ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
 	{"Local variables with slice", `@reduce;(?P<expr>(?P<name>[\$\.][\p{L}\d_\.]*)index;)endexpr;`, `{{${reduce1} ${slicer} ${name} ${index} ${reduce2}}}`, replacementFunc(expressionParserSkipError)},
 	{"Global variables - @var", `@reduce;(?P<name>[idSel])endexpr;`, `{{${reduce1} $$.${name} ${reduce2}}}`},
-	{"Context variables special - @.var", `@reduce;\.(?P<name>[flexible_id])endexpr;`, `{{${reduce1} get . "${name}" ${reduce2}}}`},
-	{"Global variables special - @var", `@reduce;(?P<name>[flexible_id])endexpr;`, `{{${reduce1} get $$ "${name}" ${reduce2}}}`},
 	{"Local variables - @$var or @.var", `@reduce;(?P<name>[\$\.][\p{L}\d_\.]*)endexpr;`, `{{${reduce1} ${name} ${reduce2}}}`},
 
 	// Expressions
