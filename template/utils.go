@@ -13,6 +13,7 @@ var trapError = errors.Trap
 var iif = collections.IIf
 var ifUndef = collections.IfUndef
 var defval = collections.Default
+var coalesce = sprigFuncMap["coalesce"].(func(...interface{}) interface{})
 
 type (
 	iList       = collections.IGenericList

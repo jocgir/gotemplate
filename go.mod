@@ -15,6 +15,7 @@ require (
 	github.com/fatih/color v1.9.0
 	github.com/go-errors/errors v1.0.2
 	github.com/hashicorp/hcl v1.0.0
+	github.com/jocgir/template v1.14.2
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/sergi/go-diff v1.1.0
@@ -26,3 +27,5 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.8
 )
+
+replace github.com/jocgir/template => /Users/jgiroux/Source/jocgir/template

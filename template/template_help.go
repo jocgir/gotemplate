@@ -151,7 +151,7 @@ func (t *Template) printFunctionsShort(functions []string, maxLength int, alias 
 }
 
 func (t *Template) printFunctionsDetailed(functions []string, maxLength int, alias bool) {
-	t.options[Razor] = true
+	t.Option(Razor)
 	t.completeExamples()
 
 	// We only print entries that are not alias

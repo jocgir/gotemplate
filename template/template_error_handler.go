@@ -92,7 +92,7 @@ func (t errorHandler) Handler(err error) (string, bool, error) {
 				assert  = "assert"
 			)
 
-			groupName := fmt.Sprintf("Undef%s", t.delimiters)
+			groupName := fmt.Sprint("Undef", t.LeftDelim(), t.RightDelim(), t.RazorDelim())
 			expressions := reutils.GetRegexGroup(groupName)
 			if expressions == nil {
 				var errRegex error
@@ -101,7 +101,7 @@ func (t errorHandler) Handler(err error) (string, bool, error) {
 					fmt.Sprintf(`%[1]s(?P<%[3]s>%[3]s|isNil|isNull|isEmpty|isSet)\s+%[4]s%[2]s`, left, right, isZero, undefError),
 					fmt.Sprintf(`%[1]s%[3]s\s+(?P<%[3]s>%[4]s).*?%[2]s`, left, right, assert, undefError),
 				}
-				if expressions, errRegex = reutils.NewRegexGroup(fmt.Sprintf("Undef%s", t.delimiters), undefRegexDefinitions...); errRegex != nil {
+				if expressions, errRegex = reutils.NewRegexGroup(groupName, undefRegexDefinitions...); errRegex != nil {
 					InternalLog.Error(errRegex)
 				}
 			}

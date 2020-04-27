@@ -50,7 +50,7 @@ func TestRuntime(t *testing.T) {
 		}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template := MustNewTemplate(".", nil, "", nil)
+			template := New("Test")
 			template.Add("base", 1)
 			result, err := template.ProcessContent(tt.content, tt.name)
 			assert.NoError(t, err)
@@ -63,8 +63,7 @@ func TestMultilineError(t *testing.T) {
 	// Ensure that multiline errors are not truncated after the first line
 	t.Parallel()
 
-	template := MustNewTemplate(".", nil, "", nil)
-	template.SetOption(StrictErrorCheck, true)
+	template := New("Test").Option(DefaultOptions, StrictErrorCheck)
 	_, err := template.ProcessContent(`@run("ls -DONT EXIST")`, "bad param")
 	assert.Error(t, err)
 	if err != nil {

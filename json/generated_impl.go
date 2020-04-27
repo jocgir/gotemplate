@@ -18,35 +18,29 @@ type jsonList []interface{}
 
 var jsonLower = strings.ToLower("Json") // This is required because genny capitalize the type name in strings
 
-func (l jsonList) AsArray() []interface{} { return []interface{}(l) }
-func (l jsonList) Cap() int               { return cap(l) }
-func (l jsonList) Capacity() int          { return cap(l) }
-func (l jsonList) Clone() jsonIList       { return jsonListHelper.Clone(l) }
-func (l jsonList) Contains(values ...interface{}) bool {
-	return jsonListHelper.Contains(l, values...)
-}
-func (l jsonList) Count() int                   { return len(l) }
-func (l jsonList) Create(args ...int) jsonIList { return jsonListHelper.CreateList(args...) }
-func (l jsonList) CreateDict(args ...int) jsonIDict {
-	return jsonListHelper.CreateDictionary(args...)
-}
-func (l jsonList) First() interface{} { return jsonListHelper.GetIndexes(l, 0) }
-func (l jsonList) Get(indexes ...int) interface{} {
-	return jsonListHelper.GetIndexes(l, indexes...)
-}
-func (l jsonList) GetKinds() jsonIList               { return jsonListHelper.GetTypes(l, true) }
-func (l jsonList) GetTypes() jsonIList               { return jsonListHelper.GetTypes(l, false) }
-func (l jsonList) Has(values ...interface{}) bool    { return l.Contains(values...) }
-func (l jsonList) Join(sep interface{}) str          { return l.StringArray().Join(sep) }
-func (l jsonList) Last() interface{}                 { return jsonListHelper.GetIndexes(l, len(l)-1) }
-func (l jsonList) Len() int                          { return len(l) }
-func (l jsonList) New(args ...interface{}) jsonIList { return jsonListHelper.NewList(args...) }
-func (l jsonList) Reverse() jsonIList                { return jsonListHelper.Reverse(l) }
-func (l jsonList) StringArray() strArray             { return jsonListHelper.GetStringArray(l) }
-func (l jsonList) Strings() []string                 { return jsonListHelper.GetStrings(l) }
-func (l jsonList) Type() str                         { return jsonListHelper.Type(l) }
-func (l jsonList) TypeName() str                     { return str(jsonLower) }
-func (l jsonList) Unique() jsonIList                 { return jsonListHelper.Unique(l) }
+func (l jsonList) AsArray() []interface{}              { return []interface{}(l) }
+func (l jsonList) Cap() int                            { return cap(l) }
+func (l jsonList) Capacity() int                       { return cap(l) }
+func (l jsonList) Clone() jsonIList                    { return jsonListHelper.Clone(l) }
+func (l jsonList) Contains(values ...interface{}) bool { return jsonListHelper.Contains(l, values...) }
+func (l jsonList) Count() int                          { return len(l) }
+func (l jsonList) Create(args ...int) jsonIList        { return jsonListHelper.CreateList(args...) }
+func (l jsonList) CreateDict(args ...int) jsonIDict    { return jsonListHelper.CreateDictionary(args...) }
+func (l jsonList) First() interface{}                  { return jsonListHelper.GetIndexes(l, 0) }
+func (l jsonList) Get(indexes ...int) interface{}      { return jsonListHelper.GetIndexes(l, indexes...) }
+func (l jsonList) GetKinds() jsonIList                 { return jsonListHelper.GetTypes(l, true) }
+func (l jsonList) GetTypes() jsonIList                 { return jsonListHelper.GetTypes(l, false) }
+func (l jsonList) Has(values ...interface{}) bool      { return l.Contains(values...) }
+func (l jsonList) Join(sep interface{}) str            { return l.StringArray().Join(sep) }
+func (l jsonList) Last() interface{}                   { return jsonListHelper.GetIndexes(l, len(l)-1) }
+func (l jsonList) Len() int                            { return len(l) }
+func (l jsonList) New(args ...interface{}) jsonIList   { return jsonListHelper.NewList(args...) }
+func (l jsonList) Reverse() jsonIList                  { return jsonListHelper.Reverse(l) }
+func (l jsonList) StringArray() strArray               { return jsonListHelper.GetStringArray(l) }
+func (l jsonList) Strings() []string                   { return jsonListHelper.GetStrings(l) }
+func (l jsonList) Type() str                           { return jsonListHelper.Type(l) }
+func (l jsonList) TypeName() str                       { return str(jsonLower) }
+func (l jsonList) Unique() jsonIList                   { return jsonListHelper.Unique(l) }
 
 func (l jsonList) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
 	return jsonDictHelper, jsonListHelper

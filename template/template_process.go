@@ -63,7 +63,7 @@ func (t *Template) printResult(source, target, result string) (err error) {
 		result = string(bytes)
 	}
 
-	if !t.isTemplate(source) && !t.options[Overwrite] {
+	if !t.isTemplate(source) && t.Disabled(Overwrite) {
 		source += ".original"
 	}
 

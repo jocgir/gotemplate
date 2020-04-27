@@ -79,8 +79,7 @@ func TestTemplateFilesOverwrite(t *testing.T) {
 			_, err = tempfile.WriteString(tt.content)
 			assert.Nil(t, err)
 
-			template, _ := NewTemplate(path.Dir(tempfile.Name()), nil, "", nil)
-			template.SetOption(Overwrite, true)
+			template := New(path.Dir(tempfile.Name())).Option(DefaultOptions, Overwrite)
 			template.ProcessTemplates("", "", tempfile.Name())
 
 			result, err := ioutil.ReadFile(tempfile.Name())
@@ -93,8 +92,7 @@ func TestTemplateFilesOverwrite(t *testing.T) {
 func Test_templateWithErrors(t *testing.T) {
 	t.Parallel()
 
-	template, _ := NewTemplate(".", nil, "", nil)
-	template.SetOption(StrictErrorCheck, true)
+	template := New("Test").Option(DefaultOptions, StrictErrorCheck)
 	tests := []struct {
 		name    string
 		content string
@@ -127,9 +125,7 @@ func TestTemplateAddFunctions(t *testing.T) {
 		return "This Is My Value"
 	}
 
-	options := DefaultOptions()
-	options[StrictErrorCheck] = true
-	template, _ := NewTemplate(".", map[string]interface{}{}, "", options)
+	template := New(".").Option(DefaultOptions, StrictErrorCheck)
 	template.AddFunctions(map[string]interface{}{"getValue": getValue}, "Inline", nil)
 	_, ok := template.functions["getValue"]
 	assert.True(t, ok, "getValue is not defined")

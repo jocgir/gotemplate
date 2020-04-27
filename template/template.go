@@ -8,15 +8,48 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"text/template"
 
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/utils"
-	multicolor "github.com/coveooss/multilogger/color"
+	"github.com/jocgir/template"
 )
 
-// String is an alias to collections.String
-type String = collections.String
+// IsRazor determines if the supplied code appears to have Razor code (using default delimiters).
+func IsRazor(code string) bool { return defaultTemplate.IsRazor(code) }
+
+// IsCode determines if the supplied code appears to have gotemplate code (using default delimiters).
+func IsCode(code string) bool { return defaultTemplate.IsCode(code) }
+
+// Must is a helper that wraps a call to a function returning (*Template, error)
+// and panics if the error is non-nil. It is intended for use in variable
+// initializations such as:
+//	var t = template.Must(template.New("name").Parse("text"))
+func Must(t *Template, err error) *Template {
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+// New allocates a new, undefined template with the given name.
+func New(name string) *Template {
+	// Set the regular expression replacements
+	baseSubstitutesRegex := []string{
+		`/(?m)^\s*#!\s*$/`,
+		`/"!Q!(?P<content>[\S]+?)!Q!"/${content}`,
+		`/"!Q!(?P<content>.*?)!Q!"/"${content}"`,
+	}
+	if substitutesFromEnv := os.Getenv(EnvSubstitutes); substitutesFromEnv != "" {
+		baseSubstitutesRegex = append(baseSubstitutesRegex, strings.Split(substitutesFromEnv, "\n")...)
+	}
+	t := &Template{
+		Template:       template.New(name),
+		options:        new(ExtendedOption),
+		optionsEnabled: new(ExtendedOption),
+		substitutes:    utils.InitReplacers(baseSubstitutesRegex...),
+	}
+	return t.Delims().SetContext(new(map[string]interface{}))
+}
 
 var templateMutex sync.Mutex
 
@@ -27,122 +60,169 @@ type Template struct {
 	substitutes    []utils.RegexReplacer
 	context        interface{}
 	constantKeys   []interface{}
-	delimiters     []string
+	razor          string
 	parent         *Template
 	folder         string
 	children       map[string]*Template
 	aliases        funcTableMap
 	functions      funcTableMap
-	options        OptionsSet
-	optionsEnabled OptionsSet
+	options        *ExtendedOption
+	optionsEnabled *ExtendedOption
 }
 
-// Environment variables that could be defined to override default behaviors.
-const (
-	EnvAcceptNoValue    = "GOTEMPLATE_NO_VALUE"
-	EnvStrictErrorCheck = "GOTEMPLATE_STRICT_ERROR"
-	EnvSubstitutes      = "GOTEMPLATE_SUBSTITUTES"
-	EnvDebug            = "GOTEMPLATE_DEBUG"
-	EnvExtensionPath    = "GOTEMPLATE_PATH"
-)
+// RazorDelim returns the razor delimiter.
+func (t *Template) RazorDelim() string { return t.razor }
 
-const (
-	noGoTemplate       = "no-gotemplate!"
-	noRazor            = "no-razor!"
-	explicitGoTemplate = "force-gotemplate!"
+// Enabled returns true if the specified options are all set.
+func (t *Template) Enabled(o ...ExtendedOption) bool { return t.options.IsSet(o...) }
 
-	pauseGoTemplate  = "gotemplate-pause!"
-	resumeGoTemplate = "gotemplate-resume!"
+// Disabled returns true if the specified options are all unset
+func (t *Template) Disabled(o ...ExtendedOption) bool { return !t.Enabled(o...) }
 
-	pauseRazor  = "razor-pause!"
-	resumeRazor = "razor-resume!"
-)
-
-// Common variables
-var (
-	// ExtensionDepth the depth level of search of gotemplate extension from the current directory (default = 2).
-	ExtensionDepth = 2
-	toStrings      = collections.ToStrings
-	acceptNoValue  = String(os.Getenv(EnvAcceptNoValue)).ParseBool()
-	strictError    = String(os.Getenv(EnvStrictErrorCheck)).ParseBool()
-	Print          = multicolor.Print
-	Printf         = multicolor.Printf
-	Println        = multicolor.Println
-	ErrPrintf      = multicolor.ErrorPrintf
-	ErrPrintln     = multicolor.ErrorPrintln
-	ErrPrint       = multicolor.ErrorPrint
-)
-
-// IsRazor determines if the supplied code appears to have Razor code (using default delimiters).
-func IsRazor(code string) bool { return strings.Contains(code, "@") }
-
-// IsCode determines if the supplied code appears to have gotemplate code (using default delimiters).
-func IsCode(code string) bool {
-	return IsRazor(code) || strings.Contains(code, "{{") || strings.Contains(code, "}}")
-}
-
-// NewTemplate creates an Template object with default initialization.
-func NewTemplate(folder string, context interface{}, delimiters string, options OptionsSet, substitutes ...string) (result *Template, err error) {
-	defer func() {
-		if rec := recover(); rec != nil {
-			result, err = nil, fmt.Errorf("%v", rec)
-		}
-	}()
-	t := Template{Template: template.New("Main")}
-	must(t.Parse(""))
-	t.options = iif(options != nil, options, DefaultOptions()).(OptionsSet)
-	if acceptNoValue {
-		t.options[AcceptNoValue] = true
-	}
-	if strictError {
-		t.options[StrictErrorCheck] = true
-	}
-	t.optionsEnabled = make(OptionsSet)
-	t.folder, _ = filepath.Abs(iif(folder != "", folder, utils.Pwd()).(string))
-	t.context = iif(context != nil, context, collections.CreateDictionary())
-	t.aliases = make(funcTableMap)
-	t.delimiters = []string{"{{", "}}", "@"}
-
-	// Set the regular expression replacements
-	baseSubstitutesRegex := []string{
-		`/(?m)^\s*#!\s*$/`,
-		`/"!Q!(?P<content>[\S]+?)!Q!"/${content}`,
-		`/"!Q!(?P<content>.*?)!Q!"/"${content}"`,
-	}
-	if substitutesFromEnv := os.Getenv(EnvSubstitutes); substitutesFromEnv != "" {
-		baseSubstitutesRegex = append(baseSubstitutesRegex, strings.Split(substitutesFromEnv, "\n")...)
-	}
-	t.substitutes = utils.InitReplacers(append(baseSubstitutesRegex, substitutes...)...)
-
-	if t.options[Extension] {
-		t.initExtension()
-	}
-
-	// Set the options supplied by caller
-	t.init("")
-	if delimiters != "" {
-		for i, delimiter := range strings.Split(delimiters, ",") {
-			if i == len(t.delimiters) {
-				return nil, fmt.Errorf("Invalid delimiters '%s', must be a maximum of three comma separated parts", delimiters)
-			}
-			if delimiter != "" {
-				t.delimiters[i] = delimiter
-			}
-		}
-	}
-	return &t, nil
-}
-
-// MustNewTemplate creates an Template object with default initialization.
-// It panics if an error occurs.
-func MustNewTemplate(folder string, context interface{}, delimiters string, options OptionsSet, substitutes ...string) *Template {
-	return must(NewTemplate(folder, context, delimiters, options, substitutes...)).(*Template)
+// SetContext set the default context for the template ($ variable).
+func (t *Template) SetContext(context interface{}) *Template {
+	t.context = context
+	return t
 }
 
 // TempFolder set temporary folder used by this template.
 func (t *Template) TempFolder(folder string) *Template {
 	t.tempFolder = folder
 	return t
+}
+
+// Delims allows setting all delimiters (left, right and razor) in one call.
+func (t *Template) Delims(delims ...string) *Template {
+	switch len(delims) {
+	case 0:
+		return t.Delims("", "", "")
+	case 1:
+		return t.Delims(delims[0], "", "")
+	case 2:
+		return t.Delims(delims[0], delims[1], "")
+	case 3:
+		t.razor = coalesce(delims[2], t.RazorDelim(), "@").(string)
+		t.Template.Delims(
+			coalesce(delims[0], t.LeftDelim(), "{{").(string),
+			coalesce(delims[1], t.RightDelim(), "{{").(string),
+		)
+		return t
+	default:
+		panic(fmt.Errorf("Too many delimiters supplied (max 3): %v", delims))
+	}
+}
+
+// Option sets options for the template.
+func (t *Template) Option(options ...interface{}) *Template {
+	for _, opt := range options {
+		switch opt := opt.(type) {
+		case ExtendedOption:
+			t.options.Set(opt, true)
+		default:
+			t.Template.Option(opt)
+		}
+	}
+	return t
+}
+
+// Replacers add a series of regular expressions to apply on template before and after evaluations.
+func (t *Template) Replacers(replacers ...string) *Template {
+	t.substitutes = append(t.substitutes, utils.InitReplacers(replacers...)...)
+	return t
+}
+
+// Parse parses text as a template body for t.
+// Named template definitions ({{define ...}} or {{block ...}} statements) in text
+// define additional templates associated with t and are removed from the
+// definition of t itself.
+//
+// Templates can be redefined in successive calls to Parse.
+// A template definition with a body containing only white space and comments
+// is considered empty and will not replace an existing template's body.
+// This allows using Parse to add new named template definitions without
+// overwriting the main template body.
+func (t *Template) Parse(text string) (*Template, error) {
+	_, err := t.Template.Parse(text)
+	return t, err
+}
+
+// ParseFiles parses the named files and associates the resulting templates with
+// t. If an error occurs, parsing stops and the returned template is nil;
+// otherwise it is t. There must be at least one file.
+// Since the templates created by ParseFiles are named by the base
+// names of the argument files, t should usually have the name of one
+// of the (base) names of the files. If it does not, depending on t's
+// contents before calling ParseFiles, t.Execute may fail. In that
+// case use t.ExecuteTemplate to execute a valid template.
+//
+// When parsing multiple files with the same name in different directories,
+// the last one mentioned will be the one that results.
+func (t *Template) ParseFiles(filenames ...string) (*Template, error) {
+	_, err := t.Template.ParseFiles(filenames...)
+	return t, err
+}
+
+// NewTemplate creates an Template object with default initialization.
+// func NewTemplate(folder string, context interface{}, delimiters string, options ExtendedOption, substitutes ...string) (result *Template, err error) {
+// 	defer func() {
+// 		if rec := recover(); rec != nil {
+// 			result, err = nil, fmt.Errorf("%v", rec)
+// 		}
+// 	}()
+// 	if options == 0 {
+// 		options = DefaultOptions
+// 	}
+
+// 	t := Must(New("Main").Parse(""))
+// 	if acceptNoValue {
+// 		t.Option(AcceptNoValue)
+// 	}
+// 	if strictError {
+// 		t.Option(StrictErrorCheck)
+// 	}
+// 	t.folder, _ = filepath.Abs(iif(folder != "", folder, utils.Pwd()).(string))
+// 	t.context = iif(context != nil, context, collections.CreateDictionary())
+// 	t.aliases = make(funcTableMap)
+
+// 	// Set the regular expression replacements
+// 	baseSubstitutesRegex := []string{`/(?m)^\s*#!\s*$/`}
+// 	if substitutesFromEnv := os.Getenv(EnvSubstitutes); substitutesFromEnv != "" {
+// 		baseSubstitutesRegex = append(baseSubstitutesRegex, strings.Split(substitutesFromEnv, "\n")...)
+// 	}
+// 	t.substitutes = utils.InitReplacers(append(baseSubstitutesRegex, substitutes...)...)
+
+// 	if t.Enabled(Extension) {
+// 		t.initExtension()
+// 	}
+
+// 	// Set the options supplied by caller
+// 	t.init("")
+// 	if delimiters != "" {
+// 		t.Delims(strings.Split(delimiters, ",")...)
+// 	}
+// 	return t, nil
+// }
+
+func (t *Template) init2() {
+}
+
+// Initialize a new template with same attributes as the current context.
+func (t *Template) init(folder string) {
+	if folder != "" {
+		t.folder, _ = filepath.Abs(folder)
+	}
+	if *t.options == 0 {
+		t.Option(DefaultOptions)
+	}
+	if t.Options() == 0 {
+		t.Option(AllOptions)
+	}
+	t.addFuncs()
+	t.children = make(map[string]*Template)
+	t.setConstant(false, "\n", "NL", "CR", "NEWLINE")
+	t.setConstant(false, true, "true")
+	t.setConstant(false, false, "false")
+	t.setConstant(false, nil, "null")
 }
 
 // GetNewContext returns a distinct context for each folder.
@@ -152,22 +232,17 @@ func (t *Template) GetNewContext(folder string, useCache bool) *Template {
 		return context
 	}
 
-	newTemplate := Template(*t)
+	newTemplate := *t
 	newTemplate.Template = template.New(folder)
 	newTemplate.addFunctions(t.functions)
 	newTemplate.addFunctions(t.aliases)
 	newTemplate.init(folder)
 	newTemplate.parent = t
 	newTemplate.importTemplates(t)
-	newTemplate.options = make(OptionsSet)
+	newTemplate.options = new(ExtendedOption)
+	*newTemplate.options = *t.options
 	if dict := t.Context(); dict.Len() > 0 {
 		newTemplate.context = dict.Clone()
-	}
-
-	// We duplicate the options because the new context may alter them afterwhile and
-	// it should not modify the original values.
-	for k, v := range t.options {
-		newTemplate.options[k] = v
 	}
 
 	if !useCache {
@@ -180,25 +255,13 @@ func (t *Template) GetNewContext(folder string, useCache bool) *Template {
 
 // IsCode determines if the supplied code appears to have gotemplate code.
 func (t *Template) IsCode(code string) bool {
-	return !strings.Contains(code, noGoTemplate) && (t.IsRazor(code) || strings.Contains(code, t.LeftDelim()) || strings.Contains(code, t.RightDelim()))
+	return !strings.Contains(code, noGoTemplate) && (t.IsRazor(code) || strings.Contains(code, t.LeftDelim()) && strings.Contains(code, t.RightDelim()))
 }
 
 // IsRazor determines if the supplied code appears to have Razor code.
 func (t *Template) IsRazor(code string) bool {
 	return strings.Contains(code, t.RazorDelim()) && !strings.Contains(code, noGoTemplate) && !strings.Contains(code, noRazor)
 }
-
-// LeftDelim returns the left delimiter.
-func (t *Template) LeftDelim() string { return t.delimiters[0] }
-
-// RightDelim returns the right delimiter.
-func (t *Template) RightDelim() string { return t.delimiters[1] }
-
-// RazorDelim returns the razor delimiter.
-func (t *Template) RazorDelim() string { return t.delimiters[2] }
-
-// SetOption allows setting of template option after initialization.
-func (t *Template) SetOption(option Options, value bool) { t.options[option] = value }
 
 func (t *Template) isTemplate(file string) bool {
 	for i := range templateExt {
@@ -212,7 +275,7 @@ func (t *Template) isTemplate(file string) bool {
 func (t *Template) initExtension() {
 	ext := t.GetNewContext("", false)
 	t.constantKeys = ext.constantKeys
-	ext.options = DefaultOptions()
+	*ext.options = DefaultOptions
 
 	var extensionfiles []string
 	if extensionFolders := strings.TrimSpace(os.Getenv(EnvExtensionPath)); extensionFolders != "" {
@@ -246,20 +309,6 @@ func (t *Template) initExtension() {
 
 	// We reset the list of templates
 	t.children = make(map[string]*Template)
-}
-
-// Initialize a new template with same attributes as the current context.
-func (t *Template) init(folder string) {
-	if folder != "" {
-		t.folder, _ = filepath.Abs(folder)
-	}
-	t.addFuncs()
-	t.children = make(map[string]*Template)
-	t.Delims(t.delimiters[0], t.delimiters[1])
-	t.setConstant(false, "\n", "NL", "CR", "NEWLINE")
-	t.setConstant(false, true, "true")
-	t.setConstant(false, false, "false")
-	t.setConstant(false, nil, "null")
 }
 
 func (t *Template) setConstant(stopOnFirst bool, value interface{}, names ...string) {
@@ -308,5 +357,53 @@ func (t *Template) Context() (result collections.IDictionary) {
 	if result, _ = collections.TryAsDictionary(t.context); result == nil {
 		result = collections.CreateDictionary()
 	}
+	return
+}
+
+// ParseGlob parses the template definitions in the files identified by the
+// pattern and associates the resulting templates with t. The files are matched
+// according to the semantics of filepath.Match, and the pattern must match at
+// least one file. ParseGlob is equivalent to calling t.ParseFiles with the
+// list of files matched by the pattern.
+//
+// When parsing multiple files with the same name in different directories,
+// the last one mentioned will be the one that results.
+func ParseGlob(pattern string) (*Template, error) {
+	filenames, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, err
+	}
+	if len(filenames) == 0 {
+		return nil, fmt.Errorf("template: pattern matches no files: %#q", pattern)
+	}
+	return ParseFiles(filenames...)
+}
+
+// ParseFiles parses the named files and associates the resulting templates with
+// t. If an error occurs, parsing stops and the returned template is nil;
+// otherwise it is t. There must be at least one file.
+// Since the templates created by ParseFiles are named by the base
+// names of the argument files, t should usually have the name of one
+// of the (base) names of the files. If it does not, depending on t's
+// contents before calling ParseFiles, t.Execute may fail. In that
+// case use t.ExecuteTemplate to execute a valid template.
+//
+// When parsing multiple files with the same name in different directories,
+// the last one mentioned will be the one that results.
+func ParseFiles(filenames ...string) (t *Template, err error) {
+	if len(filenames) == 0 {
+		// Not really a problem, but be consistent.
+		return nil, fmt.Errorf("template: no files named in call to ParseFiles")
+	}
+	defer func() {
+		switch rec := recover().(type) {
+		case nil:
+		case error:
+			err = rec
+		default:
+			err = fmt.Errorf("%v", rec)
+		}
+	}()
+	t, err = New(filepath.Base(filenames[0])).ParseFiles(filenames...)
 	return
 }

@@ -26,7 +26,7 @@ var (
 	reserved         = map[string]string{}
 	reservedKeywords = []string{
 		"$", "...",
-		"range", "default", "func", "type", "struct", "map",
+		"range", "default", "func", "type", "struct", "map", "with", "if", "return", "continue", "break",
 	}
 )
 
@@ -110,15 +110,16 @@ func expressionParserInternal(repl replacement, match string, skipError, interna
 			}
 		}
 		indexExpr = strings.Replace(strings.Join(values, " "), `$`, `$$`, -1)
-		repl.replace = strings.Replace(repl.replace, "${index}", indexExpr, -1)
-		repl.replace = strings.Replace(repl.replace, "${slicer}", slicer, -1)
+		repl.replace = repl.replace.
+			Replace("${index}", indexExpr).
+			Replace("${slicer}", slicer)
 	}
 
 	if selectExpr := matches["selection"]; selectExpr != "" {
 		if selectExpr, err = expressionParserInternal(exprRepl, selectExpr, true, true); err != nil {
 			return match, err
 		}
-		repl.replace = strings.Replace(repl.replace, "${selection}", selectExpr, -1)
+		repl.replace = repl.replace.Replace("${selection}", selectExpr)
 	}
 
 	if expr != "" {
@@ -137,8 +138,8 @@ func expressionParserInternal(repl replacement, match string, skipError, interna
 				}
 				result = strings.Replace(result, dotRep, ".", -1)
 				result = strings.Replace(result, globalRep, "$$.", -1)
-				repl.replace = strings.Replace(repl.replace, "${expr}", result, -1)
-				result = repl.re.ReplaceAllString(match, repl.replace)
+				repl.replace = repl.replace.Replace("${expr}", result)
+				result = repl.re.ReplaceAllString(match, string(repl.replace))
 				result = strings.Replace(result, "$.slice ", "slice $.", -1)
 				return result, nil
 			}
@@ -149,10 +150,10 @@ func expressionParserInternal(repl replacement, match string, skipError, interna
 		if skipError {
 			return match, err
 		}
-		repl.replace = strings.Replace(repl.replace, "${expr}", strings.Replace(expression, "$", "$$", -1), -1)
+		repl.replace = repl.replace.Replace("${expr}", strings.Replace(expression, "$", "$$", -1))
 	}
 
-	return repl.re.ReplaceAllString(match, repl.replace), nil
+	return repl.re.ReplaceAllString(match, string(repl.replace)), nil
 }
 
 var exprRepl = replacement{

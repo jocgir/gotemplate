@@ -20,7 +20,7 @@ func TestTemplate_applyRazor(t *testing.T) {
 	t.Parallel()
 	dmp := diffmatchpatch.New()
 	TemplateLog = multilogger.New("test")
-	template := MustNewTemplate("../docs_tests", nil, "", nil)
+	template := New("../docs_tests").Option(DefaultOptions)
 	files, err := doublestar.Glob(filepath.Join(template.folder, "**/*.md"))
 	if err != nil {
 		t.Fatalf("Unable to read test files (documentation in %s)", template.folder)
@@ -41,7 +41,7 @@ func TestTemplate_applyRazor(t *testing.T) {
 		return path
 	}
 
-	template.options[AcceptNoValue] = true
+	template.Option(AcceptNoValue)
 
 	load := func(path string) []byte { return must(ioutil.ReadFile(path)).([]byte) }
 
@@ -58,7 +58,9 @@ func TestTemplate_applyRazor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template.options[Razor] = tt.razor != ""
+			if tt.razor != "" {
+				template.Option(Razor)
+			}
 
 			processContent := func(renderingDisabled bool) string {
 				var got string
@@ -69,7 +71,9 @@ func TestTemplate_applyRazor(t *testing.T) {
 							err = fmt.Errorf("Template.ProcessContent() panic=%v\n%s", rec, string(debug.Stack()))
 						}
 					}()
-					template.options[RenderingDisabled] = renderingDisabled
+					if renderingDisabled {
+						template.Option(RenderingDisabled)
+					}
 					got, err = template.ProcessContent(string(load(tt.path)), tt.path)
 				}()
 				if err != nil {
@@ -135,7 +139,7 @@ func TestBase(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template := MustNewTemplate(".", nil, "", nil)
+			template := New("Test")
 			got, _ := template.applyRazor([]byte(tt.razor))
 			assert.Equal(t, tt.want, string(got), tt.razor)
 		})
@@ -176,7 +180,7 @@ func TestInvocation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template := MustNewTemplate(".", nil, "", nil)
+			template := New("Test")
 			got, _ := template.applyRazor([]byte(tt.razor))
 			assert.Equal(t, tt.want, string(got), tt.razor)
 		})
@@ -329,7 +333,7 @@ func TestAssign(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template := MustNewTemplate(".", nil, "", nil)
+			template := New("Test")
 			got, _ := template.applyRazor([]byte(tt.razor))
 			assert.Equal(t, tt.want, string(got), tt.razor)
 		})
@@ -368,7 +372,7 @@ func TestAssignWithValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template := MustNewTemplate(".", nil, "", nil)
+			template := New("Test")
 			got, changed := template.applyRazor([]byte(tt.razor))
 			assert.Equal(t, tt.want, string(got), tt.razor)
 			assert.True(t, changed)
@@ -409,7 +413,7 @@ func TestAutoWrap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template := MustNewTemplate(".", nil, "", nil)
+			template := New("Test")
 			got, _ := template.applyRazor([]byte(tt.razor))
 			assert.Equal(t, tt.want, string(got), tt.razor)
 		})
@@ -446,7 +450,7 @@ func TestSpaceEater(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template := MustNewTemplate(".", nil, "", nil)
+			template := New("Test")
 			got, _ := template.applyRazor([]byte(tt.razor))
 			assert.Equal(t, tt.want, string(got), tt.razor)
 		})
@@ -498,7 +502,7 @@ func TestMultilineStringProtect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template := MustNewTemplate(".", nil, "", nil)
+			template := New("Test")
 			got, _ := template.applyRazor([]byte(tt.razor))
 			assert.Equal(t, tt.want, string(got), tt.razor)
 		})
@@ -525,7 +529,7 @@ func TestData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template := MustNewTemplate(".", nil, "", DefaultOptions().Set(StrictErrorCheck))
+			template := New("Test").Option(StrictErrorCheck)
 			got, err := template.ProcessContent(tt.code, "")
 			assert.Equal(t, tt.want, got)
 			if tt.err == nil {
@@ -543,7 +547,7 @@ func TestReservedKeywords(t *testing.T) {
 	// Ensure that protected go keyword are processed correctly
 	t.Parallel()
 
-	template := MustNewTemplate(".", nil, "", nil)
+	template := New("Test")
 	for i, keyword := range reservedKeywords {
 		if keyword == "..." {
 			continue

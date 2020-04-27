@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"text/template"
 
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/fatih/color"
@@ -165,7 +164,7 @@ func (fi FuncInfo) Result() string {
 
 type funcTableMap map[string]*FuncInfo
 
-func (ftm funcTableMap) convert() template.FuncMap {
+func (ftm funcTableMap) convert() FuncMap {
 	result := collections.CreateDictionary(len(ftm))
 	for key, val := range ftm {
 		if val.function == nil {

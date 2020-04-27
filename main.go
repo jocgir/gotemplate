@@ -115,11 +115,13 @@ func runGotemplate() (exitCode int) {
 
 	// Set the options for the available options (most of them are on by default)
 	optionsOff := app.Flag("base", "Turn off all addons (they could then be enabled explicitly)").NoAutoShortcut().Bool()
-	options := make([]bool, template.OptionOnByDefaultCount)
-	for i := range options {
-		opt := template.Options(i)
-		optName := strings.ToLower(fmt.Sprint(opt))
-		app.Flag(optName, fmt.Sprintf("%v Addon (ON by default)", opt)).NoAutoShortcut().Default(loadAllAddins).BoolVar(&options[i])
+	var (
+		defaultOptionList = template.DefaultOptions.List()
+		optionFlags       = make([]bool, len(defaultOptionList))
+	)
+	for i, opt := range defaultOptionList {
+		optName := strings.ToLower(opt.String())
+		app.Flag(optName, fmt.Sprintf("%v Addon (ON by default)", opt)).NoAutoShortcut().Default(loadAllAddins).BoolVar(&optionFlags[i])
 	}
 	app.GetFlag("extension").Alias("ext")
 
@@ -142,11 +144,9 @@ func runGotemplate() (exitCode int) {
 	}
 
 	// Build the optionsSet
-	var optionsSet template.OptionsSet
-	if *optionsOff {
-		optionsSet = make(template.OptionsSet)
-	} else {
-		optionsSet = template.DefaultOptions()
+	var options template.ExtendedOption
+	if !*optionsOff {
+		options = template.DefaultOptions
 	}
 
 	// By default, we generate JSON list and dictionary
@@ -167,13 +167,13 @@ func runGotemplate() (exitCode int) {
 		collections.SetDictionaryHelper(json.DictionaryHelper)
 	}
 
-	optionsSet[template.RenderingDisabled] = *disableRender
-	optionsSet[template.Overwrite] = *overwrite
-	optionsSet[template.OutputStdout] = *print
-	optionsSet[template.AcceptNoValue] = *acceptNoValue
-	optionsSet[template.StrictErrorCheck] = *strictError
-	for i := range options {
-		optionsSet[template.Options(i)] = options[i]
+	options.Set(template.RenderingDisabled, *disableRender)
+	options.Set(template.Overwrite, *overwrite)
+	options.Set(template.OutputStdout, *print)
+	options.Set(template.AcceptNoValue, *acceptNoValue)
+	options.Set(template.StrictErrorCheck, *strictError)
+	for i, opt := range defaultOptionList {
+		options.Set(opt, optionFlags[i])
 	}
 
 	switch *strictAssignations {
@@ -254,7 +254,12 @@ func runGotemplate() (exitCode int) {
 		return 1
 	}
 
-	t, err := template.NewTemplate("", context, *delimiters, optionsSet, *substitutes...)
+	t := template.
+		New("Main").
+		SetContext(context).
+		Delims(strings.Split(*delimiters, ",")...).
+		Option(options).
+		Replacers(*substitutes...)
 	if err != nil {
 		errors.Print(err)
 		return 3

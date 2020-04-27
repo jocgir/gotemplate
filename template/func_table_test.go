@@ -9,7 +9,7 @@ import (
 
 func TestFunctionTemplating(t *testing.T) {
 	t.Parallel()
-	template := MustNewTemplate(".", nil, "", nil)
+	template := New("Test")
 	template.completeExamples()
 
 	for _, functionName := range template.getFunctions() {

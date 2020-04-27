@@ -24,11 +24,11 @@ func (t *Template) ProcessTemplatesWithHandler(sourceFolder, targetFolder string
 	targetFolder = iif(targetFolder == "", t.folder, targetFolder).(string)
 	resultFiles = make([]string, 0, len(templates))
 
-	print := t.options[OutputStdout]
+	print := t.Enabled(OutputStdout)
 
 	var errors errors.Array
 	for i := range templates {
-		t.options[OutputStdout] = print // Some file may change this option at runtime, so we restore it back to its originalSourceLines value between each file
+		t.options.Set(OutputStdout, print) // Some file may change this option at runtime, so we restore it back to its originalSourceLines value between each file
 		resultFile, err := t.processTemplate(templates[i], sourceFolder, targetFolder, handler)
 		if err == nil {
 			if resultFile != "" {
@@ -80,12 +80,12 @@ func (t *Template) processTemplate(template, sourceFolder, targetFolder string, 
 			resultFile = ""
 			return
 		}
-		if !t.options[Overwrite] {
+		if t.Disabled(Overwrite) {
 			resultFile = fmt.Sprint(strings.TrimSuffix(resultFile, ext), ".generated", ext)
 		}
 	}
 
-	if t.options[OutputStdout] {
+	if t.Enabled(OutputStdout) {
 		err = t.printResult(template, resultFile, result)
 		if err != nil {
 			errors.Print(err)
@@ -100,7 +100,7 @@ func (t *Template) processTemplate(template, sourceFolder, targetFolder string, 
 	}
 
 	mode := must(os.Stat(template)).(os.FileInfo).Mode()
-	if !isTemplate && !t.options[Overwrite] {
+	if !isTemplate && t.Disabled(Overwrite) {
 		newName := template + ".original"
 		InternalLog.Infof("%s => %s", utils.Relative(t.folder, template), utils.Relative(t.folder, newName))
 		must(os.Rename(template, template+".original"))
@@ -119,7 +119,7 @@ func (t *Template) processTemplate(template, sourceFolder, targetFolder string, 
 		return
 	}
 
-	if isTemplate && t.options[Overwrite] && sourceFolder == targetFolder {
+	if isTemplate && t.Enabled(Overwrite) && sourceFolder == targetFolder {
 		os.Remove(template)
 	}
 	return
@@ -166,7 +166,7 @@ func (t *Template) processContentInternal(originalContent, source string, origin
 			lines := strings.Split(th.Code, "\n")
 			if strings.Contains(lines[0], "gotemplate") {
 				th.Code = strings.Join(lines[1:], "\n")
-				t.options[OutputStdout] = true
+				t.Option(OutputStdout)
 			}
 		}
 
@@ -191,14 +191,14 @@ func (t *Template) processContentInternal(originalContent, source string, origin
 		razor, _ = t.applyRazor([]byte(th.Code))
 		th.Code = string(razor)
 
-		if t.options[RenderingDisabled] || !t.IsCode(th.Code) {
+		if t.Enabled(RenderingDisabled) || !t.IsCode(th.Code) {
 			// There is no template element to evaluate or the template rendering is off
 			return revertReplacements(th.Code), false, nil
 		}
 
 		InternalLog.Debug("GoTemplate processing of ", th.Filename)
 
-		if !t.options[AcceptNoValue] {
+		if t.Disabled(AcceptNoValue) {
 			// We replace any pre-existing no value to avoid false error detection
 			th.Code = strings.Replace(th.Code, noValue, noValueRepl, -1)
 			th.Code = strings.Replace(th.Code, nilValue, nilValueRepl, -1)
@@ -209,7 +209,7 @@ func (t *Template) processContentInternal(originalContent, source string, origin
 			// gotemplate! or the strict error check mode is not enabled, we simply
 			// add a trace with the error content and return the content unaltered
 			if err != nil {
-				strictMode := t.options[StrictErrorCheck]
+				strictMode := t.Enabled(StrictErrorCheck)
 				strictMode = strictMode || strings.Contains(th.Source, explicitGoTemplate)
 				extension := filepath.Ext(th.Filename)
 				strictMode = strictMode || (extension != "" && strings.Contains(".gt,.gte,.template", extension))
@@ -226,9 +226,9 @@ func (t *Template) processContentInternal(originalContent, source string, origin
 
 	if topCall {
 		newTemplate.Option("missingkey=default")
-	} else if !t.options[AcceptNoValue] {
+	} else if t.Disabled(AcceptNoValue) {
 		// To help detect errors on second run, we enable the option to raise error on nil values
-		newTemplate.Option("missingkey=error")
+		newTemplate.Option(Error)
 	}
 
 	func() {
@@ -256,7 +256,7 @@ func (t *Template) processContentInternal(originalContent, source string, origin
 
 	changed = result != originalContent
 
-	if topCall && !t.options[AcceptNoValue] {
+	if topCall && t.Disabled(AcceptNoValue) {
 		// Detect possible <no value> or <nil> that could be generated
 		if pos := strings.Index(strings.Replace(result, nilValue, noValue, -1), noValue); pos >= 0 {
 			line := len(strings.Split(result[:pos], "\n"))
@@ -264,7 +264,7 @@ func (t *Template) processContentInternal(originalContent, source string, origin
 		}
 	}
 
-	if !t.options[AcceptNoValue] {
+	if t.Disabled(AcceptNoValue) {
 		// We restore the existing no value if any
 		result = strings.Replace(result, noValueRepl, noValue, -1)
 		result = strings.Replace(result, nilValueRepl, nilValue, -1)

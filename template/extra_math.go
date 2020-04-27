@@ -368,9 +368,8 @@ func (t *Template) addMathFuncs() {
 	}
 
 	// We do not want to inject the math constant twice
-	if !t.optionsEnabled[Math] {
+	if !t.optionsEnabled.IsSet(Math) {
 		t.setConstant(true, constants, "Math", "MATH")
-		t.optionsEnabled[Math] = true
 	}
 }
 

@@ -11,12 +11,13 @@ import (
 
 // Add additional functions to the go template context
 func (t *Template) applyRazor(content []byte) (result []byte, changed bool) {
-	if !t.options[Razor] || !t.IsRazor(string(content)) {
+	if t.Disabled(Razor) || !t.IsRazor(string(content)) {
 		return content, false
 	}
 	t.ensureInit()
 
-	for _, r := range replacementsInit[fmt.Sprint(t.delimiters)] {
+	key := fmt.Sprint(t.LeftDelim(), t.RightDelim(), t.RazorDelim())
+	for _, r := range replacementsInit[key] {
 		printDebugInfo(r, string(content))
 		if r.parser == nil {
 			content = r.re.ReplaceAll(content, []byte(r.replace))
@@ -136,25 +137,29 @@ var replacementsInit = make(map[string][]replacement)
 
 type replacementFunc func(replacement, string) string
 type replacement struct {
-	name       string
-	expr       string
-	replace    string
-	re         *regexp.Regexp
-	parser     replacementFunc
-	delimiters []string
+	t       *Template
+	name    string
+	expr    String
+	replace String
+	re      *regexp.Regexp
+	parser  replacementFunc
 }
 
 func (t *Template) ensureInit() {
-	delimiters := fmt.Sprint(t.delimiters)
-	if _, ok := replacementsInit[delimiters]; !ok {
+	key := fmt.Sprint(t.LeftDelim(), t.RightDelim(), t.RazorDelim())
+	if _, ok := replacementsInit[key]; !ok {
 		// We must ensure that search and replacement expression are compatible with the set of delimiters
 		replacements := make([]replacement, 0, len(expressions))
 		for _, expr := range expressions {
 			comment := expr[0].(string)
-			re := strings.Replace(expr[1].(string), "@", regexp.QuoteMeta(t.delimiters[2]), -1)
-			re = strings.Replace(re, "{{", regexp.QuoteMeta(t.delimiters[0]), -1)
-			re = strings.Replace(re, "}}", regexp.QuoteMeta(t.delimiters[1]), -1)
-			replace := strings.Replace(strings.Replace(strings.Replace(expr[2].(string), "{{", t.delimiters[0], -1), "}}", t.delimiters[1], -1), "@", t.delimiters[2], -1)
+			re := String(expr[1].(string)).
+				Replace(DefaultRazorDelim, regexp.QuoteMeta(t.RazorDelim())).
+				Replace(DefaultLeftDelim, regexp.QuoteMeta(t.LeftDelim())).
+				Replace(DefaultRightDelim, regexp.QuoteMeta(t.RightDelim()))
+			replace := String(expr[2].(string)).
+				Replace(DefaultLeftDelim, t.LeftDelim()).
+				Replace(DefaultRightDelim, t.RightDelim()).
+				Replace(DefaultRazorDelim, t.RazorDelim())
 			var exprParser replacementFunc
 			if len(expr) >= 4 {
 				exprParser = expr[3].(replacementFunc)
@@ -163,31 +168,43 @@ func (t *Template) ensureInit() {
 			// We apply replacements in regular expression to make them regex compliant
 			for i := range customMetaclass {
 				key, value := customMetaclass[i][0], customMetaclass[i][1]
-				re = strings.Replace(re, key, value, -1)
+				re = re.Replace(key, value)
 			}
 
-			subExpressions := []string{re}
-			if strings.Contains(re, expressionKey) {
+			subExpressions := []String{re}
+			if re.Contains(expressionKey) {
 				// If regex contains the generic expression token [expr], we generate several expression evaluator
 				// that go from the most generic expression to the most specific one
-				subExpressions = make([]string, len(expressionList))
+				subExpressions = make([]String, len(expressionList))
 				for i := range expressionList {
-					subExpressions[i] = strings.Replace(re, expressionKey, expressionList[i], -1)
+					subExpressions[i] = re.Replace(expressionKey, expressionList[i])
 				}
 			}
 
 			for i := range subExpressions {
-				re := regexp.MustCompile(subExpressions[i])
-				replacements = append(replacements, replacement{comment, subExpressions[i], replace, re, exprParser, t.delimiters})
+				re := regexp.MustCompile(string(subExpressions[i]))
+				replacements = append(replacements, replacement{
+					t,
+					comment,
+					subExpressions[i],
+					replace,
+					re,
+					exprParser,
+				})
 			}
 
 			if len(subExpressions) > 1 && len(expr) == 5 {
 				// If there is a fallback expression evaluator, we apply it on the first replacement alternative
-				re := regexp.MustCompile(subExpressions[0])
-				replacements = append(replacements, replacement{comment, subExpressions[0], replace, re, expr[4].(replacementFunc), t.delimiters})
+				re := regexp.MustCompile(string(subExpressions[0]))
+				replacements = append(replacements, replacement{
+					t,
+					comment,
+					subExpressions[0],
+					replace, re, expr[4].(replacementFunc),
+				})
 			}
 		}
-		replacementsInit[delimiters] = replacements
+		replacementsInit[key] = replacements
 	}
 }
 

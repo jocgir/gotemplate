@@ -1,14 +1,16 @@
 package template
 
-// OptionsSet represents the map of enabled options
-type OptionsSet map[Options]bool
+import (
+	"fmt"
+	"reflect"
+)
 
-// Options defines the type that hold the various options & libraries that should be included
-type Options int
+// ExtendedOption represents the additional options enabled by this template package.
+type ExtendedOption uint32
 
 // Options values
 const (
-	Razor Options = iota
+	Razor ExtendedOption = 1 << iota
 	Extension
 	Math
 	Sprig
@@ -19,34 +21,69 @@ const (
 	Net
 	OS
 	Git
-	OptionOnByDefaultCount // Trigger of options that are on by default
 	Overwrite
 	OutputStdout
 	RenderingDisabled
 	AcceptNoValue
 	StrictErrorCheck
+
+	DefaultOptions = Git<<1 - 1
+	AllOptions     = StrictErrorCheck<<1 - 1
 )
 
-// Set options to true
-func (os OptionsSet) Set(options ...Options) OptionsSet { return os.set(true, options) }
+//go:generate stringer -type=options -output generated_options.go
 
-// Unset options
-func (os OptionsSet) Unset(options ...Options) OptionsSet { return os.set(false, options) }
-
-func (os OptionsSet) set(value bool, options []Options) OptionsSet {
-	for i := range options {
-		os[options[i]] = value
+// IsSet checks if all options specified are set.
+// If you want to test with logical OR, submitted options can be combined with binary or.
+// If you want to test with logical AND, submitted options must be provided separately.
+func (o ExtendedOption) IsSet(opts ...ExtendedOption) bool {
+	for _, opt := range opts {
+		if o&opt == 0 {
+			return false
+		}
 	}
-	return os
+	return o != 0
 }
 
-// DefaultOptions returns a OptionsSet with the first options turned on by default
-func DefaultOptions() OptionsSet {
-	os := make(OptionsSet)
-	for i := Options(0); i < OptionOnByDefaultCount; i++ {
-		os[i] = true
+// Set the bits on the object t
+func (o *ExtendedOption) Set(opt ExtendedOption, on bool) *ExtendedOption {
+	if on {
+		*o |= opt
+	} else {
+		*o ^= opt
 	}
-	return os
+	return o
 }
 
-//go:generate stringer -type=Options -output generated_options.go
+// Strings generates a string with all enabled options separated by sep.
+func (o ExtendedOption) Strings(sep ...interface{}) (result string) {
+	var separator = "+"
+	if len(sep) > 0 {
+		separator = fmt.Sprint(sep...)
+	}
+	if (o != 0) && ((o & (o - 1)) == 0) {
+		// There is only one byte set, so we don't have to
+		// loop and we can delegate to the generated constants.
+		return o.String()
+	}
+	for current := ExtendedOption(1); current <= AllOptions; current <<= 1 {
+		if o&current != 0 {
+			if result != "" {
+				result += separator
+			}
+			result += current.String()
+		}
+	}
+	return
+}
+
+// List returns an array with all options available.
+func (o ExtendedOption) List() []ExtendedOption {
+	result := make([]ExtendedOption, 0, reflect.TypeOf(o).Bits())
+	for current := ExtendedOption(1); current <= ExtendedOption(AllOptions); current <<= 1 {
+		if o&current != 0 {
+			result = append(result, current)
+		}
+	}
+	return result
+}

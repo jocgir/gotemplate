@@ -32,10 +32,11 @@ func (t *Template) addFuncs() {
 	}
 	t.addFunctions(baseGoTemplateFuncs)
 
-	add := func(o Options, f func()) {
-		if t.options[o] {
+	add := func(o ExtendedOption, f func()) {
+		if t.Enabled(o) {
 			f()
 		}
+		t.optionsEnabled.Set(o, true)
 	}
 
 	add(Sprig, t.addSprigFuncs)
