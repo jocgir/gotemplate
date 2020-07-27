@@ -1,0 +1,10 @@
+@define("myfunc")
+#! /usr/bin/env bash
+echo Bonjour "@typeOf(ARGS)"
+@end
+
+@func("pycall", "run", "xxx.py", `description = "invoke ls" args=["name patate", "rest ..."] def={name="John Doe"}  json=true`)
+@func("hi", "run", "display.py", `args=["first string", "last string"] description="Say hello" def={first="John" last="Doe"}`)
+@func("myfunc", "exec", "myfunc", `args=["d ..."]`)
+@func("ls", "exec", "ls", `description = "invoke ls" args=["args ..."]`)
+@func("buckets", "exec", "aws s3api list-buckets --query Buckets", `description="Returns AWS S3 Bucket list as an object"`)

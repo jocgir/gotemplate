@@ -65,7 +65,59 @@ var runtimeFuncsHelp = descriptions{
 	"ellipsis":         "Returns the result of the function by expanding its last argument that must be an array into values. It's like calling function(arg1, arg2, otherArgs...).",
 	"exec":             "Returns the result of the shell command as structured data (as string if no other conversion is possible).",
 	"exit":             "Exits the current program execution.",
-	"func":             "Defines a function with the current context using the function (exec, run, include, template). Executed in the context of the caller.",
+	"func": strings.TrimSpace(collections.UnIndent(`
+		Add a new function that could be invocated as regular gotemplate function.
+
+		func can only be used in gotemplate extension (.gte) files. If defined in regular file, the call will work, but the function won't be callable since it must exist before parsing the template.
+
+		name:     The name of the new function
+
+		function: The execution mode
+		          exec     = The function will execute the content and try to tranform the output to data (output must be pure json, yaml or hcl)
+		          run      = The function will execute the content and will returns the output as a string
+		          include  = The function will simply render the content applying gotemplate on it
+		          template = Similar to include except that current context won't be injected in the template evaluation
+
+		source:   The source of the function.
+		          Search order is defined as follow:
+		          - Look in the available template (define statement)
+		          - If the source is expressed as an absolute path, we use the content of the file
+		          - If the source is expressed as a relative path, we try to locate the file relative to the folder containing the current template
+		          - Look for the file in the current template folder
+		          - Look for an executable script located somewhere in the PATH
+
+		config:   The configuration information of the function (must be a valid map that could be defined as json, yaml or hcl or using the dict function).
+		          description: (aliases d or desc) describes the help string to be displayed for this new function.
+		          group      : (alias g) describes the function group name. By default the group name will be "User defined functions".
+		          arguments  : (aliases a or args) is a list of strings that describes the arguments accepted by the function.
+		         	           Each string express the name and optionally the argument type (the type is only used for documentation purpose).
+		         	           However, if the last parameter represents a variadic, its type must start with ...
+		         	           The argument name is used to define the positional parameter name and parameters will be accessible within the
+		         	           template function as a contextual value.
+		          aliases    : describes the list of other names that could be used to call the new function.
+		          defaults   : (aliases def or default) is a map describing the default values for the arguments.
+		          jsonArgs   : (aliases j or json) is a boolean value indicating that arguments passed to cli should be converted to json string. 
+		
+		Examples:
+		   # Register a custom function named "ls" to list the content of a directory.
+		   # This function accept an optional variable number of arguments.
+		   @func("ls", "run", "ls", ` + "`" + `args=["args ..."] description=invoke ls"` + "`" + `)
+
+		   Let say we have the following python script named display.py:
+		   #! /usr/bin/env
+		   import sys
+		   print("Hello", sys.argv[1], sys.argv[2])
+
+		   # Register a custom function named "hi" to say hello to someone.
+		   # This function has optional parameters with default values set to say Hello John Doe.
+		   @func("hi", "run", "display.py", ` + "`" + `args=["first string", "last string"] def={first="John" last="Doe"} Description=Say hello"` + "`" + `)
+
+		   # Register a functions that returns the list of AWS S3 Buckets as an object (this is the difference between exec mode vs run mode).
+		   @func("buckets", "exec", "aws s3api list-buckets --query Buckets", ` + "`" + `description="Returns AWS S3 Bucket list as an object"` + "`" + `)
+
+		   # This new function can then be used as:
+		   @for (buckets()) @<printf("The bucket %s was created on %v", .Name, .CreationDate);
+	`)),
 	"function": strings.TrimSpace(collections.UnIndent(`
 		Returns the information relative to a specific function.
 
@@ -220,6 +272,7 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 		return "", fmt.Errorf("Too many parameters supplied")
 	}
 
+	json := false
 	for key, val := range config.AsMap() {
 		switch strings.ToLower(key) {
 		case "d", "desc", "description":
@@ -234,6 +287,8 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 				err = fmt.Errorf("%[1]s must be a list of strings: %[2]T %[2]v", key, val)
 				return
 			}
+		case "j", "json", "jsonArgs":
+			json = String(fmt.Sprint(val)).ParseBool()
 		case "aliases":
 			switch val := val.(type) {
 			case iList:
@@ -266,51 +321,93 @@ func (t *Template) addAlias(name, function string, source interface{}, local, co
 
 	defaultValues := defval(config.Get("def"), collections.CreateDictionary()).(iDictionary)
 
+	isVariadic := false
 	fi.in = fmt.Sprintf("%s", strings.Join(fi.arguments, ", "))
 	for i := range fi.arguments {
 		// We only keep the arg name and get rid of any supplemental information (likely type)
-		fi.arguments[i] = strings.Fields(fi.arguments[i])[0]
+		fields := strings.Fields(fi.arguments[i])
+		fi.arguments[i] = fields[0]
+		if len(fields) > 1 && strings.HasPrefix(fields[1], "...") {
+			if i != len(fi.arguments)-1 {
+				err = fmt.Errorf("Variadic arguments must be specified only on the last one")
+				return
+			}
+			isVariadic = true
+		}
 	}
+	arguments := collections.AsList(fi.arguments)
 
 	fi.function = func(args ...interface{}) (result interface{}, err error) {
 		context := collections.CreateDictionary()
-		parentContext := t.Context()
+		parentContext := getContext(0)
 		if parentContext.Len() == 0 {
 			context.Set("DEFAULT", t.context)
 		}
 
 		switch len(args) {
 		case 1:
-			if len(fi.arguments) != 1 {
-				switch arg := args[0].(type) {
-				case string:
-					var out interface{}
-					if collections.ConvertData(arg, &out) == nil {
-						args[0] = out
+			switch arg := args[0].(type) {
+			case string:
+				var out interface{}
+				if collections.ConvertData(arg, &out) == nil {
+					args[0] = out
+				}
+			}
+
+			if arg, err := collections.TryAsDictionary(args[0]); err == nil {
+				// We validate that each provided name arguments is valid
+				for k := range arg.AsMap() {
+					if !arguments.Contains(k) {
+						return nil, fmt.Errorf("Unknown parameter name: %s", k)
 					}
 				}
-
-				if arg, err := collections.TryAsDictionary(args[0]); err == nil {
-					context.Merge(arg, defaultValues, parentContext)
-					break
-				}
+				context.Merge(arg, defaultValues, parentContext)
+				break
 			}
 			fallthrough
 		default:
-			templateContext, err := collections.TryAsDictionary(t.context)
-			if err != nil {
-				return nil, err
+			context.Merge(defaultValues, parentContext)
+			if !isVariadic && len(args) > len(fi.arguments) {
+				return nil, fmt.Errorf("Too many argument specified for %s", fi.Signature())
 			}
-
-			context.Merge(defaultValues, templateContext)
 			for i := range args {
-				if i >= len(fi.arguments) {
-					context.Set("ARGS", args[i:])
+				if isVariadic && i == len(fi.arguments)-1 {
+					context.Set(fi.arguments[i], args[i:])
 					break
+				} else {
+					context.Set(fi.arguments[i], args[i])
 				}
-				context.Set(fi.arguments[i], args[i])
 			}
 		}
+
+		argValue := func(value interface{}) interface{} { return value }
+		if json {
+			argValue = func(value interface{}) interface{} {
+				if value, err := t.jsonConverter(value, nil); err == nil {
+					return value
+				}
+				return value
+			}
+		}
+
+		// We validate that each argument as a value
+		args = make([]interface{}, 0, len(args))
+		for i, k := range fi.arguments {
+			if i == len(fi.arguments)-1 && isVariadic {
+				if !context.Has(k) {
+					// There was no variadic argument supplied
+					context.Set(k, []interface{}{})
+				}
+
+				args = append(args, argValue(context.Get(k)).(iList).AsArray()...)
+			} else {
+				if !context.Has(k) {
+					return nil, fmt.Errorf("Argument %s has no value", k)
+				}
+				args = append(args, argValue(context.Get(k)))
+			}
+		}
+		context.Set("ARGS", args)
 		return f(collections.Interface2string(source), context)
 	}
 
@@ -325,6 +422,14 @@ func (t *Template) run(command string, args ...interface{}) (result interface{},
 	// We check if the supplied command is a template
 	if command, filename, err = t.runTemplate(command, args...); err != nil {
 		return
+	}
+
+	// If only context is supplied as argument, we extract the actual arguments from ARGS
+	switch len(args) {
+	case 1:
+		if arguments, err := collections.TryAsDictionary(args[0]); err == nil {
+			args = collections.AsList(arguments.Default("ARGS", nil)).AsArray()
+		}
 	}
 
 	var cmd *exec.Cmd
@@ -415,15 +520,22 @@ func (t *Template) runTemplate(source string, args ...interface{}) (result, file
 		if !strings.Contains(source, "\n") {
 			tryFile := source
 			if !path.IsAbs(tryFile) {
+				// We first try to find the file in the same folder as the template
 				tryFile = path.Join(t.folder, tryFile)
+				if _, err = os.Stat(tryFile); err != nil {
+					// We look if we can find the file in the PATH, the file must then be executable to be found
+					if tryFile, err = exec.LookPath(source); err == nil && isBinary(tryFile) {
+						tryFile = ""
+					}
+				}
 			}
 			if fileContent, e := ioutil.ReadFile(tryFile); e != nil {
 				if _, ok := e.(*os.PathError); !ok {
 					err = e
 					return
 				}
-			} else {
-				source = string(fileContent)
+			} else if code := string(fileContent); t.IsCode(code) {
+				source = code
 				filename = tryFile
 			}
 		}
@@ -440,7 +552,7 @@ func (t *Template) runTemplate(source string, args ...interface{}) (result, file
 	}
 
 	// We execute the resulting template
-	if err = internalTemplate.Execute(&out, t.context); err != nil {
+	if err = t.execute(internalTemplate, &out, t.context); err != nil {
 		return
 	}
 

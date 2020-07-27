@@ -2,10 +2,12 @@ package template
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/coveooss/gotemplate/v3/utils"
 	"golang.org/x/crypto/ssh/terminal"
@@ -83,3 +85,17 @@ func (t *Template) printResult(source, target, result string) (err error) {
 
 	return
 }
+
+func (t *Template) execute(actual *template.Template, wr io.Writer, data interface{}) error {
+	if dict, ok := data.(iDictionary); ok {
+		contextStack = append(contextStack, dict)
+		defer func() { contextStack = contextStack[:len(contextStack)-1] }()
+	}
+	return actual.Execute(wr, data)
+}
+
+func getContext(n int) iDictionary {
+	return contextStack[len(contextStack)-1-n]
+}
+
+var contextStack []iDictionary

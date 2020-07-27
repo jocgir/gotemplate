@@ -248,7 +248,7 @@ func (t *Template) processContentInternal(originalContent, source string, origin
 	if cloneContext {
 		workingContext = collections.AsDictionary(workingContext).Clone()
 	}
-	if err = newTemplate.Execute(&out, workingContext); err != nil {
+	if err = t.execute(newTemplate, &out, workingContext); err != nil {
 		InternalLog.Debugf("%s(%d): Execution error %v", th.Filename, th.Try, err)
 		return th.Handler(err)
 	}

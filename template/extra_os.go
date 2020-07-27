@@ -1,6 +1,7 @@
 package template
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"os/user"
 	"path"
 	"time"
+	"unicode"
 
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/utils"
@@ -24,6 +26,7 @@ var osFuncs = dictionary{
 	"glob":         glob,
 	"group":        userGroup,
 	"home":         userHome,
+	"isBinary":     isBinary,
 	"isDir":        isDir,
 	"isExecutable": isExecutable,
 	"isFile":       isFile,
@@ -44,6 +47,7 @@ var osFuncs = dictionary{
 var osFuncsArgs = arguments{
 	"diff":         {"text1", "text2"},
 	"exists":       {"filename"},
+	"isBinary":     {"filename"},
 	"isDir":        {"filename"},
 	"isExecutable": {"filename"},
 	"isFile":       {"filename"},
@@ -78,6 +82,7 @@ var osFuncsHelp = descriptions{
 	"glob":         "Returns the expanded list of supplied arguments (expand *[]? on filename).",
 	"group":        "Returns the current user group information (user.Group object).",
 	"home":         "Returns the home directory of the current user.",
+	"isBinary":     "Determines if a file is a binary file.",
 	"isDir":        "Determines if the file is a directory.",
 	"isExecutable": "Determines if the file is executable by the current user.",
 	"isFile":       "Determines if the file is a file (i.e. not a directory).",
@@ -224,4 +229,14 @@ func userHome() string {
 func lookPath(file interface{}) string {
 	path, _ := exec.LookPath(fmt.Sprint(file))
 	return path
+}
+
+func isBinary(file interface{}) bool {
+	var (
+		f   = must(os.Open(fmt.Sprint(file))).(*os.File)
+		buf = make([]byte, 1024)
+		n   = must(f.Read(buf)).(int)
+		pos = bytes.IndexFunc(buf, func(r rune) bool { return !unicode.IsGraphic(r) && !unicode.IsSpace(r) })
+	)
+	return pos < n
 }
