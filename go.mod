@@ -17,6 +17,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0
 	github.com/huandu/xstrings v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
+	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/sergi/go-diff v1.0.0
