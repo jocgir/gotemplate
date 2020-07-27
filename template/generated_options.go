@@ -25,11 +25,12 @@ func _() {
 	_ = x[RenderingDisabled-14]
 	_ = x[AcceptNoValue-15]
 	_ = x[StrictErrorCheck-16]
+	_ = x[RazorCode-17]
 }
 
-const _Options_name = "RazorExtensionMathSprigDataLoggingRuntimeUtilsNetOSGitOptionOnByDefaultCountOverwriteOutputStdoutRenderingDisabledAcceptNoValueStrictErrorCheck"
+const _Options_name = "RazorExtensionMathSprigDataLoggingRuntimeUtilsNetOSGitOptionOnByDefaultCountOverwriteOutputStdoutRenderingDisabledAcceptNoValueStrictErrorCheckRazorCode"
 
-var _Options_index = [...]uint8{0, 5, 14, 18, 23, 27, 34, 41, 46, 49, 51, 54, 76, 85, 97, 114, 127, 143}
+var _Options_index = [...]uint8{0, 5, 14, 18, 23, 27, 34, 41, 46, 49, 51, 54, 76, 85, 97, 114, 127, 143, 152}
 
 func (i Options) String() string {
 	if i < 0 || i >= Options(len(_Options_index)-1) {

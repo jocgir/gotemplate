@@ -66,7 +66,7 @@ results in:
 You can also specify that the expression should be preceded by a new line:
 
 ```text
-    The word {{- $.NEWLINE }}{{ $.expr }} will be on a new line
+    The word {{- println -}}{{ $.expr }} will be on a new line
 ```
 
 results in:
@@ -81,7 +81,7 @@ results in:
 This line will be rendered with 4 spaces before each word:
 
 ```go
-{{- $.NEWLINE }}{{- spaceIndent (`    `) (wrap 15 "This is a long line that should be rendered with a maximum 15 characters per line") }}
+{{- println -}}{{- spaceIndent (`    `) (wrap 15 "This is a long line that should be rendered with a maximum 15 characters per line") }}
 ```
 
 results in :
@@ -99,8 +99,8 @@ While this line will be rendered with 4 spaces and a caret before each word:
 
 ```go
 list:
-{{- $.NEWLINE }}{{- spaceIndent (`  - `) (list "item 1" "item 2" "item 3") }}
-{{- $.NEWLINE }}{{- spaceIndent (`    - `) (list "sub 1" "sub 2" "sub 3") }}
+{{- println -}}{{- spaceIndent (`  - `) (list "item 1" "item 2" "item 3") }}
+{{- println -}}{{- spaceIndent (`    - `) (list "sub 1" "sub 2" "sub 3") }}
 ```
 
 results in:
@@ -117,7 +117,7 @@ results in:
 While this line will be rendered with 4 spaces and `**` before each word:
 
 ```go
-{{- $.NEWLINE }}{{- spaceIndent (`    ** `) (list "item 1" "item 2" "item 3") }}
+{{- println -}}{{- spaceIndent (`    ** `) (list "item 1" "item 2" "item 3") }}
 ```
 
 results in:
@@ -131,7 +131,7 @@ results in:
 It is also possible to automatically wrap list elements with the surrounding context:
 
 ```go
-{{- $.NEWLINE }}{{ join "\n" (formatList "    => This is Item #[%v]!" (to 5)) }}
+{{- println -}}{{ join "\n" (formatList "    => This is Item #[%v]!" (to 5)) }}
 ```
 
 results in:

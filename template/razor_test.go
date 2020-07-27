@@ -338,7 +338,7 @@ func TestAutoWrap(t *testing.T) {
 		{
 			"With newline",
 			"Before @<aWrap(to(10)) after",
-			`{{- $.NEWLINE }}{{ join "\n" (formatList "Before %v after" (to 10)) }}`,
+			`{{- println -}}{{ join "\n" (formatList "Before %v after" (to 10)) }}`,
 		},
 		{
 			"With space eater",

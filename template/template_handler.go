@@ -7,11 +7,14 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/utils"
 	"github.com/coveooss/multilogger/errors"
+	"github.com/coveooss/multilogger/reutils"
 	"github.com/fatih/color"
 )
 
@@ -41,7 +44,72 @@ func (t *Template) ProcessTemplatesWithHandler(sourceFolder, targetFolder string
 	return resultFiles, errors.AsError()
 }
 
+func (t *Template) xxx(code string) string {
+	notSpace := func(r rune) bool { return !unicode.IsSpace(r) }
+	lines := String(code).Lines()
+	re := []*regexp.Regexp{
+		// https://regex101.com/r/N69xQW/6
+		regexp.MustCompile(`^(?P<indent>\s*)(?:(?P<keyword>(?P<if>if)|(?P<elseif>}\s*(?:else\s*if|elif))|(?P<else>}\s*else)|(?P<range>range|for(?:each)?)|(?P<with>with)|(?P<define>define))\s*(?P<code>.*?)(?P<open>{)?|(?P<close>}))\s*(?:(?://|#)(?P<comment>.*))?$`),
+		// https://regex101.com/r/WKgXgi/3
+		regexp.MustCompile(`^(?P<indent>\s*)(?:(?:(?P<function>func(?:tion)?)))\s*(?P<funcname>\w+)\s*(?:(?P<open>{)|(?P<code>.*?))\s*(?:(?://|#)(?P<comment>.*))?$`),
+	}
+
+	debug := func(line String, f func(string, ...interface{}) string) {
+		x, y := t.applyRazor([]byte(line))
+		fmt.Println(f(string(x)), y)
+	}
+	for i, line := range lines {
+		line = line.TrimRightFunc(unicode.IsSpace)
+		if matches, index := reutils.MultiMatch(line.Str(), re...); index < 0 {
+			pos := line.IndexFunc(notSpace)
+			if pos >= 0 {
+				prefix := "@--"
+				after := pos
+				switch line[pos] {
+				case '<':
+					prefix = "@<--"
+					after++
+				case '{', '-', '$', '/', '#':
+					prefix = "@"
+				}
+				line = line[:pos] + String(prefix) + line[after:]
+				debug(line, color.MagentaString)
+			}
+		} else {
+			line = String(matches["indent"])
+			switch index {
+			case 0:
+				if matches["close"] != "" {
+					line += "@--end"
+				} else if keyword := String(matches["keyword"]); keyword != "" {
+					if String(matches["else"]) != "" {
+						line += "@--else"
+					} else {
+						line += "@--" + keyword + " " + String(matches["code"])
+					}
+				}
+				if comment := String(matches["comment"]); comment != "" {
+					line += "@//" + comment
+				}
+				debug(line, color.HiBlueString)
+			case 1:
+				line = String(fmt.Sprintf(`%s@--define("%s")`, matches["indent"], matches["funcname"]))
+				if code := String(matches["code"]); code != "" {
+					line += "@" + code + "@--end"
+				}
+				debug(line, color.HiGreenString)
+			}
+		}
+		lines[i] = line
+		fmt.Println(color.YellowString(line.Str()))
+	}
+	return lines.Join("\n").Str()
+}
+
 func (t *Template) processTemplate(template, sourceFolder, targetFolder string, handler CustomHandler) (resultFile string, err error) {
+	if t.options[RazorCode] {
+		template = t.xxx(template)
+	}
 	isCode := t.IsCode(template)
 	var content string
 

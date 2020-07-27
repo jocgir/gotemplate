@@ -25,6 +25,7 @@ const (
 	RenderingDisabled
 	AcceptNoValue
 	StrictErrorCheck
+	RazorCode
 )
 
 // DefaultOptions returns a OptionsSet with the first options turned on by default

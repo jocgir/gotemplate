@@ -65,11 +65,11 @@ var expressions = [][]interface{}{
 	{"", `@@`, literalAt},
 	{"", `@{{`, literalStart},
 	{"", "(?s)`+.*?`+", "", replacementFunc(protectMultiLineStrings)},
-	{"", `@<;`, `{{- $.NEWLINE }}`},
+	{"", `@<;`, `{{- println }}`},
 	{"Auto indent", `(?m)^(?P<before>.*)@reduce;(?:autoIndent|aindent|aIndent)\(`, "@<-spaceIndent(`${before}`, "},
 	{"Auto wrap", `(?m)^(?P<before>.*)@(?P<nl><)?reduce;(?P<func>autoWrap|awrap|aWrap)(?P<context>\(.*)$`, "", replacementFunc(autoWrap)},
 	{`Inline content "@<...>"`, `"@reduce;<(?P<content>.*?)>"`, `"<<@${reduce}(${content})"`},
-	{"Newline expression", `@<`, `{{- $.NEWLINE }}@`},
+	{"Newline expression", `@<`, `{{- println -}}@`},
 
 	// Comments
 	{"Pseudo line comments - #! @", `(?m)(?:[sp](?:#|//)![sp])@`, "@"},

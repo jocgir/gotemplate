@@ -1,0 +1,61 @@
+#! /usr/bin/env bash
+
+# Generate detailed function info
+gotemplate --no-extension --color --rc -d '
+function test to(10) # TODO This is a single line function
+
+function trim {
+    $wrapped := String(text).Replace("<", "&lt;").Wrap(69)
+    {wrapped} := String(text).Replace("<", "&lt;").Wrap(69)
+    if (indent) $wrapped = $wrapped.IndentN(indent).TrimSpace()
+     // This is a single line if
+    print(wrapped)
+}
+
+function GenerateCategory { // TODO This is a function
+    $re := reCompile(`(?P<name>.*), (?P<url>http://.*)`)
+    println("---\nbookToC: 2\nweight: 2\n---")
+    println("# ", $re.ReplaceAllString(category.Name, `[${name}](${url})`))
+    println("<!-- markdownlint-disable MD033 MD024 --->")
+    foreach ($func := category.Functions()) {
+        $func = function($func)
+        if (!$func.IsAlias) { # TODO This is a if
+            printf("\n## __%s__\n", $func.Name)
+            println("\n```go")
+            println("func", include("trim", dict("text", stripColor($func.Signature))))
+            print("```")
+            if ($func.Description) {
+                print("\n\n<pre>")
+                printf("\n%s", template("trim", dict("text", $func.Description)))
+                println("</pre>")
+            } else {
+                warning($func.Name, "does not have description")
+            }
+            if ($func.Aliases) {
+                <println("\n### Aliases")
+                <printf("- _%s_", join("_\n- _", $func.Aliases))
+            }
+            with ($func.Examples) {
+                print("\n### Examples")
+                foreach ($ex := .) {
+                    print("\n```go")
+                    with($ex.Razor)    printf("Razor:    %s", include("trim", dict("text", ., "indent", 10))) # TODO This is single line
+                    with($ex.Template) printf("Template: %s", include("trim", dict("text", ., "indent", 10)))
+                    with($ex.Result)   printf("Result:   %s", include("trim", dict("text", ., "indent", 10)))
+                    print("```")
+                }
+            }
+        }
+    }
+}
+
+completeExamples()
+$re := reCompile(`(?P<name>.*), http://.*`)
+
+foreach ($category := categories()) {
+    $content := include("GenerateCategory", merge(dict("category", $category), $))
+    $name := $re.ReplaceAllString($category.Name, `${name}`)
+    info("Generating documentation for", $name)
+    save(joinPath(folder, lower($name))+".md", $content)
+}
+'

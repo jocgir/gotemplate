@@ -84,6 +84,7 @@ func runGotemplate() (exitCode int) {
 		print               = run.Flag("print", "Output the result directly to stdout").Short('P').Bool()
 		disableRender       = run.Flag("disable", "Disable go template rendering (used to view razor conversion)").Short('d').Bool()
 		acceptNoValue       = run.Flag("accept-no-value", "Do not consider rendering <no value> as an error").Alias("no-value").Envar(template.EnvAcceptNoValue).Bool()
+		razorCode           = run.Flag("razor-code", "Indicate that the whole template should be interpretated as Razor code (i.e. Embedded within @{ } block)").Bool()
 		strictError         = run.Flag("strict-error-validation", "Consider error encountered in any file as real error").Alias("strict").Envar(template.EnvStrictErrorCheck).Short('S').Bool()
 		strictAssignations  = run.Flag("strict-assignations-validation", "Enforce strict assignation validation on global variables").Default("warning").Enum("on", "off", "warning")
 		ignoreMissingImport = run.Flag("ignore-missing-import", "Exit with code 0 even if import does not exist").Bool()
@@ -172,6 +173,7 @@ func runGotemplate() (exitCode int) {
 	optionsSet[template.OutputStdout] = *print
 	optionsSet[template.AcceptNoValue] = *acceptNoValue
 	optionsSet[template.StrictErrorCheck] = *strictError
+	optionsSet[template.RazorCode] = *razorCode
 	for i := range options {
 		optionsSet[template.Options(i)] = options[i]
 	}
