@@ -39,7 +39,7 @@ If you really want to add comment to your file and wish them to not be rendered,
 | ----------------               | -----------                                     | ------             | ----
 | `4
 | `4
-| `4 ` | `4`                | <no value> generates a real gotemplate comment */}}
+| `4 ` | `4`                | @# generates a real gotemplate comment */}}
 | `4 ` | `4`                | @// also generates a real gotemplate comment */}}
 | `4 ` | `4 ` | `4`                |  is used to generate multi-lines gotemplate comment
 

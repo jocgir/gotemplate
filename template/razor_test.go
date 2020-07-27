@@ -224,7 +224,7 @@ func TestAssign(t *testing.T) {
 		{
 			"Local replacement 4",
 			"@{a.b.c} = 2",
-			`{{- set $a.b "c" 2 }}`,
+			`{{- assertWarning (not (isNil $a.b.c)) "$a.b.c does not exist, use := to declare new variable" }}{{- set $a.b "c" 2 }}`,
 		},
 		{
 			"Global assign 1",
@@ -247,32 +247,27 @@ func TestAssign(t *testing.T) {
 			`{{- assertWarning (not (isNil $.a)) "$.a does not exist, use := to declare new variable" }}{{- set $ "a" "test" }}`,
 		},
 		{
-			"Global assign with non standard identifier characters",
-			`@12t%!e#st- := "test"`,
-			`{{- set $ "12t%!e#st-" "test" }}`,
-		},
-		{
-			"Global assign with sub objects",
+			"Global assign @ with sub objects",
 			`@a.b.c.d.e := "test"`,
 			`{{- set $.a.b.c.d "e" "test" }}`,
 		},
 		{
-			"Assignment operator 1",
+			"Assignment operator local @{}",
 			`@{a} += 10`,
 			`{{- $a = add $a 10 }}`,
 		},
 		{
-			"Assignment operator 2",
+			"Assignment operator local @{} embedded",
 			`@{a *= 10}`,
 			`{{- $a = mul $a 10 }}`,
 		},
 		{
-			"Assignment operator 3",
+			"Assignment operator global @",
 			`@a <<= 10`,
 			`{{- assertWarning (not (isNil $.a)) "$.a does not exist, use := to declare new variable" }}{{- set $ "a" (lshift $.a 10) }}`,
 		},
 		{
-			"Assignment operator 3",
+			"Assignment operator global @ with sub object",
 			`@a.b.c <<= 10`,
 			`{{- assertWarning (not (isNil $.a.b.c)) "$.a.b.c does not exist, use := to declare new variable" }}{{- set $.a.b "c" (lshift $.a.b.c 10) }}`,
 		},
@@ -292,19 +287,34 @@ func TestAssign(t *testing.T) {
 			`{{- assertWarning (not (isNil .a.b)) ".a.b does not exist, use := to declare new variable" }}{{- set .a "b" (mul .a.b (mul 4 2)) }}`,
 		},
 		{
-			"Assignment operator 7",
+			"Assignment operator global @$ with sub object",
 			`@$.a.b *= 4`,
 			`{{- assertWarning (not (isNil $.a.b)) "$.a.b does not exist, use := to declare new variable" }}{{- set $.a "b" (mul $.a.b 4) }}`,
 		},
 		{
-			"Assignment operator 8",
+			"Assignment operator local (@$)",
 			`@$a *= 4`,
 			`{{- $a = mul $a 4 }}`,
 		},
 		{
+			"Assignment operator local @{}",
+			`@{a} »= 10`,
+			`{{- $a = rshift $a 10 }}`,
+		},
+		{
+			"Assignment operator local @{} with sub object",
+			`@{a.b} ÷= 2`,
+			`{{- assertWarning (not (isNil $a.b)) "$a.b does not exist, use := to declare new variable" }}{{- set $a "b" (div $a.b 2) }}`,
+		},
+		{
+			"Assignment operator local @$ with sub object",
+			`@$a.b *= 4`,
+			`{{- assertWarning (not (isNil $a.b)) "$a.b does not exist, use := to declare new variable" }}{{- set $a "b" (mul $a.b 4) }}`,
+		},
+		{
 			"Assignment operator local sub",
 			`@{a.b.c} ÷= 2`,
-			`{{- set $a.b "c" (div $a.b.c 2) }}`,
+			`{{- assertWarning (not (isNil $a.b.c)) "$a.b.c does not exist, use := to declare new variable" }}{{- set $a.b "c" (div $a.b.c 2) }}`,
 		},
 		{
 			"Assignment operator with expression",

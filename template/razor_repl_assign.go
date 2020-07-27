@@ -68,15 +68,25 @@ func assignExpressionInternal(repl replacement, match string, acceptError bool) 
 	object := strings.Join(parts[:len(parts)-1], ".")
 	id = parts[len(parts)-1]
 
-	if !global {
-		// This is a local assignation with sub elements
-		return fmt.Sprintf(`%[1]s- set $%[3]s "%[4]s" %[5]s %[2]s`, repl.delimiters[0], repl.delimiters[1], object, id, expr)
-	}
-
 	if strings.HasSuffix(tp, ".") {
+		// The object is assigned with a syntax such as:
+		//   @.a := ...
+		//   @.a.b := ...
 		object = "." + object
-	} else {
+	} else if global {
+		// The object is assigned with a syntax such as:
+		//   @a := ...
+		//   @a.b := ...
 		object = iif(object == "", "$", "$."+object).(string)
+	} else {
+		// The object is assigned with a syntax such as:
+		//   @$a := ...
+		//   @{a} := ...
+		//   @{a := ...}
+		//   @$a.b := ...
+		//   @{a.b} := ...
+		//   @{a.b := ...}
+		object = "$" + object
 	}
 
 	if assign == ":=" || StrictAssignationMode == AssignationValidationDisabled {

@@ -32,14 +32,14 @@ If you really want to add comment to your file and wish them to not be rendered,
 * `{{- "" }}
 * `{{- "" }}
 * `{{/* ` generates gotemplate real comment `{{/* comment */}}` enclosing every character after the comment up to the end of line. */}}
-* `{{/* ` acts exactly as `{{ get $ "#" }}`. */}}
+* `{{/* ` acts exactly as `@#`. */}}
 * `{{/* */}}` is used to generates gotemplate comment in a multi-lines context.
 
 | Razor expression               | Go Template                                     | Render             | Note
 | ----------------               | -----------                                     | ------             | ----
 | `{{ add 2 2 }}{{- "" }}
 | `{{ add 2 2 }}{{- "" }}
-| `{{ add 2 2 }} {{/* comment {{ mul 2 3 }}`     | `{{ add 2 2 }} {{/* comment {{ mul 2 3 }} */}}` | `4`                | {{ get $ "#" }} generates a real gotemplate comment */}}
+| `{{ add 2 2 }} {{/* comment {{ mul 2 3 }}`     | `{{ add 2 2 }} {{/* comment {{ mul 2 3 }} */}}` | `4`                | @# generates a real gotemplate comment */}}
 | `{{ add 2 2 }} {{/* comment {{ mul 2 3 }}`    | `{{ add 2 2 }} {{/* comment {{ mul 2 3 }} */}}` | `4`                | @// also generates a real gotemplate comment */}}
 | `{{ add 2 2 }} {{/* comment {{ mul 2 3 }} */}}` | `{{ add 2 2 }} {{/* comment {{ mul 2 3 }} */}}` | `4`                | {{/* */}} is used to generate multi-lines gotemplate comment
 
