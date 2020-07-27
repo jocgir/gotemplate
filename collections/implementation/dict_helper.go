@@ -109,9 +109,8 @@ func (dh DictHelper) GetKeys(dict baseIDict) baseIList {
 // GetTypes returns a dictionary with key and type (or kind) for each element.
 func (dh DictHelper) GetTypes(dict baseIDict, kind bool) baseIDict {
 	result := dh.CreateDictionary(dict.Len())
-
 	for key, value := range dict.AsMap() {
-		result.Set(key, iif(kind, reflect.TypeOf(value).Kind().String(), reflect.TypeOf(value).Name()))
+		result.Set(key, iif(kind, reflect.TypeOf(value).Kind().String(), fmt.Sprintf("%T", value)))
 	}
 	return result
 }
@@ -178,16 +177,22 @@ func (dh DictHelper) Pop(dict baseIDict, keys []interface{}) interface{} {
 }
 
 // Set sets key to value in the dictionary.
-func (dh DictHelper) Set(dict baseIDict, key interface{}, value interface{}) baseIDict {
+func (dh DictHelper) Set(dict baseIDict, raw, overwrite bool, key interface{}, value interface{}) baseIDict {
 	if dict.AsMap() == nil {
 		dict = dh.CreateDictionary()
 	}
-	dict.AsMap()[fmt.Sprint(key)] = dh.Convert(value)
+	if overwrite || !dict.Has(key) {
+		if raw {
+			dict.AsMap()[fmt.Sprint(key)] = value
+		} else {
+			dict.AsMap()[fmt.Sprint(key)] = dh.Convert(value)
+		}
+	}
 	return dict
 }
 
 // Add adds value to an existing key instead of replacing the value as done by set.
-func (dh DictHelper) Add(dict baseIDict, key interface{}, value interface{}) baseIDict {
+func (dh DictHelper) Add(dict baseIDict, raw bool, key interface{}, value interface{}) baseIDict {
 	if dict.AsMap() == nil {
 		dict = dh.CreateDictionary()
 	}

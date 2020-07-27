@@ -7,7 +7,8 @@ import (
 
 // IGenericList represents objects that act as []interface{}.
 type IGenericList interface {
-	Append(...interface{}) IGenericList                     // Add elements to the current list. If list is not large enough, it is enlarged to fit the required size.
+	Append(...interface{}) IGenericList                     // Add elements (with transformation) to the current list. If list is not large enough, it is enlarged to fit the required size.
+	AppendRaw(...interface{}) IGenericList                  // Add raw elements to the current list. If list is not large enough, it is enlarged to fit the required size.
 	AsArray() []interface{}                                 // Returns the current list as standard array of interface{}.
 	Cap() int                                               // Returns the capacity of the list.
 	Capacity() int                                          // Simply an alias for Cap.
@@ -30,7 +31,8 @@ type IGenericList interface {
 	Len() int                                               // Returns the number of elements in the list.
 	New(...interface{}) IGenericList                        // Creates a new generic list from the supplied arguments.
 	Pop(indexes ...int) (interface{}, IGenericList)         // Removes and returns the elements of the list (if nothing is specified, remove the last element).
-	Prepend(...interface{}) IGenericList                    // Add elements to the beginning of the current list. If list is not large enough, it is enlarged to fit the required size.
+	Prepend(...interface{}) IGenericList                    // Add elements (with transformation) to the beginning of the current list. If list is not large enough, it is enlarged to fit the required size.
+	PrependRaw(...interface{}) IGenericList                 // Add raw elements to the beginning of the current list. If list is not large enough, it is enlarged to fit the required size.
 	PrettyPrint() string                                    // Returns the pretty string representation of the list.
 	Remove(indexes ...int) IGenericList                     // Returns a new list without the element specified.
 	RemoveEmpty() IGenericList                              // Returns a new list without the element that evaluates to empty or zero.

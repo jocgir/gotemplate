@@ -50,7 +50,11 @@ func (l hclList) GetHelpers() (collections.IDictionaryHelper, collections.IListH
 }
 
 func (l hclList) Append(values ...interface{}) hclIList {
-	return hclListHelper.Add(l, false, values...)
+	return hclListHelper.Add(l, false, false, values...)
+}
+
+func (l hclList) AppendRaw(values ...interface{}) hclIList {
+	return hclListHelper.Add(l, true, false, values...)
 }
 
 func (l hclList) Contains(values ...interface{}) bool {
@@ -77,7 +81,11 @@ func (l hclList) Pop(indexes ...int) (interface{}, hclIList) {
 }
 
 func (l hclList) Prepend(values ...interface{}) hclIList {
-	return hclListHelper.Add(l, true, values...)
+	return hclListHelper.Add(l, false, true, values...)
+}
+
+func (l hclList) PrependRaw(values ...interface{}) hclIList {
+	return hclListHelper.Add(l, true, true, values...)
 }
 
 func (l hclList) Remove(indexes ...int) hclIList {
@@ -89,7 +97,7 @@ func (l hclList) Set(i int, v interface{}) (hclIList, error) {
 }
 
 func (l hclList) Union(values ...interface{}) hclIList {
-	return hclListHelper.Add(l, false, values...).Unique()
+	return hclListHelper.Add(l, false, false, values...).Unique()
 }
 
 func (l hclList) Without(values ...interface{}) hclIList {
@@ -101,7 +109,10 @@ type Dictionary = hclDict
 type hclIDict = collections.IDictionary
 type hclDict map[string]interface{}
 
-func (d hclDict) Add(key, v interface{}) hclIDict     { return hclDictHelper.Add(d, key, v) }
+func (d hclDict) Add(key, v interface{}) hclIDict { return hclDictHelper.Add(d, false, key, v) }
+func (d hclDict) AddRaw(key, v interface{}) hclIDict {
+	return hclDictHelper.Add(d, true, key, v)
+}
 func (d hclDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
 func (d hclDict) Clone(keys ...interface{}) hclIDict  { return hclDictHelper.Clone(d, keys) }
 func (d hclDict) Count() int                          { return len(d) }
@@ -118,10 +129,12 @@ func (d hclDict) KeysAsString() strArray              { return hclDictHelper.Key
 func (d hclDict) Len() int                            { return len(d) }
 func (d hclDict) Native() interface{}                 { return must(collections.MarshalGo(d)) }
 func (d hclDict) Pop(keys ...interface{}) interface{} { return hclDictHelper.Pop(d, keys) }
-func (d hclDict) Set(key, v interface{}) hclIDict     { return hclDictHelper.Set(d, key, v) }
-func (d hclDict) Transpose() hclIDict                 { return hclDictHelper.Transpose(d) }
-func (d hclDict) Type() str                           { return hclDictHelper.Type(d) }
-func (d hclDict) TypeName() str                       { return str(hclLower) }
+func (d hclDict) Set(key, v interface{}) hclIDict {
+	return hclDictHelper.Set(d, true, true, key, v)
+}
+func (d hclDict) Transpose() hclIDict { return hclDictHelper.Transpose(d) }
+func (d hclDict) Type() str           { return hclDictHelper.Type(d) }
+func (d hclDict) TypeName() str       { return str(hclLower) }
 
 func (d hclDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
 	return hclDictHelper, hclListHelper
@@ -141,6 +154,20 @@ func (d hclDict) Merge(dict hclIDict, otherDicts ...hclIDict) hclIDict {
 
 func (d hclDict) Omit(key interface{}, otherKeys ...interface{}) hclIDict {
 	return hclDictHelper.Omit(d, append([]interface{}{key}, otherKeys...))
+}
+
+func (d hclDict) SetRaw(key, v interface{}) string {
+	hclDictHelper.Set(d, false, true, key, v)
+	return ""
+}
+
+func (d hclDict) SetDefault(key, v interface{}) string {
+	hclDictHelper.Set(d, true, false, key, v)
+	return ""
+}
+func (d hclDict) SetDefaultRaw(key, v interface{}) string {
+	hclDictHelper.Set(d, false, false, key, v)
+	return ""
 }
 
 // Generic helpers to simplify physical implementation

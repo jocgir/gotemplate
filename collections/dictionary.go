@@ -7,7 +7,8 @@ import (
 
 // IDictionary represents objects that act as map[string]interface.
 type IDictionary interface {
-	Add(key, value interface{}) IDictionary                  // Add value to key (if key exist, convert the key value into list and append the new value).
+	Add(key, value interface{}) IDictionary                  // Add value (with transformation) to key (if key exist, convert the key value into list and append the new value).
+	AddRaw(key, value interface{}) IDictionary               // Add raw value to key (if key exist, convert the key value into list and append the new value).
 	AsMap() map[string]interface{}                           // Returns the object casted as map[string]interface{}.
 	Clone(...interface{}) IDictionary                        // Returns a distinct copy of the object with only supplied keys. If no keys are supplied, all keys from d are copied.
 	Count() int                                              // Simply an alias for Len.
@@ -30,7 +31,10 @@ type IDictionary interface {
 	Omit(interface{}, ...interface{}) IDictionary            // Returns a distinct copy of the object including all keys except specified ones.
 	Pop(...interface{}) interface{}                          // Returns and remove the objects with the specified keys.
 	PrettyPrint() string                                     // Returns the pretty string representation of the dictionary.
-	Set(key, value interface{}) IDictionary                  // Sets key to value in the dictionary.
+	Set(key, value interface{}) IDictionary                  // Sets key to value (with transformation) in the dictionary.
+	SetRaw(key, value interface{}) string                    // Sets key to raw value in the dictionary.
+	SetDefault(key, value interface{}) string                // Sets key to value (with transformation) in the dictionary if it does not exist.
+	SetDefaultRaw(key, value interface{}) string             // Sets key to raw value in the dictionary if it does not exist.
 	String() string                                          // Returns the string representation of the dictionary.
 	Transpose() IDictionary                                  // Transpose keys/values and return the resulting dictionary.
 	Type() String                                            // Returns the type of object.

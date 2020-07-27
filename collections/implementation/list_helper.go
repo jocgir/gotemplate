@@ -16,10 +16,12 @@ type ListHelper struct {
 }
 
 // Add adds elements at the end of the supplied list.
-func (lh ListHelper) Add(list baseIList, prepend bool, objects ...interface{}) baseIList {
+func (lh ListHelper) Add(list baseIList, raw, prepend bool, objects ...interface{}) baseIList {
 	array := list.AsArray()
-	for i := range objects {
-		objects[i] = lh.Convert(objects[i])
+	if !raw {
+		for i := range objects {
+			objects[i] = lh.Convert(objects[i])
+		}
 	}
 	if prepend {
 		array, objects = objects, array
@@ -107,7 +109,7 @@ func (lh ListHelper) GetTypes(list baseIList, kind bool) baseIList {
 	result := lh.CreateList(list.Len())
 	for i := range list.AsArray() {
 		value := list.Get(i)
-		result.Set(i, iif(kind, reflect.TypeOf(value).Kind().String(), reflect.TypeOf(value).Name()))
+		result.Set(i, iif(kind, reflect.TypeOf(value).Kind().String(), fmt.Sprintf("%T", value)))
 	}
 	return result
 }
@@ -128,7 +130,7 @@ func (lh ListHelper) SetIndex(list baseIList, index int, value interface{}) (bas
 		return nil, fmt.Errorf("index must be positive number")
 	}
 	for list.Len() <= index {
-		list = lh.Add(list, false, nil)
+		list = lh.Add(list, false, false, nil)
 	}
 	list.AsArray()[index] = lh.Convert(value)
 	return list, nil

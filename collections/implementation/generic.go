@@ -46,7 +46,11 @@ func (l baseList) GetHelpers() (collections.IDictionaryHelper, collections.IList
 }
 
 func (l baseList) Append(values ...interface{}) baseIList {
-	return baseListHelper.Add(l, false, values...)
+	return baseListHelper.Add(l, false, false, values...)
+}
+
+func (l baseList) AppendRaw(values ...interface{}) baseIList {
+	return baseListHelper.Add(l, true, false, values...)
 }
 
 func (l baseList) Contains(values ...interface{}) bool {
@@ -73,7 +77,11 @@ func (l baseList) Pop(indexes ...int) (interface{}, baseIList) {
 }
 
 func (l baseList) Prepend(values ...interface{}) baseIList {
-	return baseListHelper.Add(l, true, values...)
+	return baseListHelper.Add(l, false, true, values...)
+}
+
+func (l baseList) PrependRaw(values ...interface{}) baseIList {
+	return baseListHelper.Add(l, true, true, values...)
 }
 
 func (l baseList) Remove(indexes ...int) baseIList {
@@ -85,7 +93,7 @@ func (l baseList) Set(i int, v interface{}) (baseIList, error) {
 }
 
 func (l baseList) Union(values ...interface{}) baseIList {
-	return baseListHelper.Add(l, false, values...).Unique()
+	return baseListHelper.Add(l, false, false, values...).Unique()
 }
 
 func (l baseList) Without(values ...interface{}) baseIList {
@@ -97,7 +105,8 @@ type DictTypeName = baseDict
 type baseIDict = collections.IDictionary
 type baseDict map[string]interface{}
 
-func (d baseDict) Add(key, v interface{}) baseIDict    { return baseDictHelper.Add(d, key, v) }
+func (d baseDict) Add(key, v interface{}) baseIDict    { return baseDictHelper.Add(d, false, key, v) }
+func (d baseDict) AddRaw(key, v interface{}) baseIDict { return baseDictHelper.Add(d, true, key, v) }
 func (d baseDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
 func (d baseDict) Clone(keys ...interface{}) baseIDict { return baseDictHelper.Clone(d, keys) }
 func (d baseDict) Count() int                          { return len(d) }
@@ -114,7 +123,7 @@ func (d baseDict) KeysAsString() strArray              { return baseDictHelper.K
 func (d baseDict) Len() int                            { return len(d) }
 func (d baseDict) Native() interface{}                 { return must(collections.MarshalGo(d)) }
 func (d baseDict) Pop(keys ...interface{}) interface{} { return baseDictHelper.Pop(d, keys) }
-func (d baseDict) Set(key, v interface{}) baseIDict    { return baseDictHelper.Set(d, key, v) }
+func (d baseDict) Set(key, v interface{}) baseIDict    { return baseDictHelper.Set(d, true, true, key, v) }
 func (d baseDict) Transpose() baseIDict                { return baseDictHelper.Transpose(d) }
 func (d baseDict) Type() str                           { return baseDictHelper.Type(d) }
 func (d baseDict) TypeName() str                       { return str(baseLower) }
@@ -137,6 +146,20 @@ func (d baseDict) Merge(dict baseIDict, otherDicts ...baseIDict) baseIDict {
 
 func (d baseDict) Omit(key interface{}, otherKeys ...interface{}) baseIDict {
 	return baseDictHelper.Omit(d, append([]interface{}{key}, otherKeys...))
+}
+
+func (d baseDict) SetRaw(key, v interface{}) string {
+	baseDictHelper.Set(d, false, true, key, v)
+	return ""
+}
+
+func (d baseDict) SetDefault(key, v interface{}) string {
+	baseDictHelper.Set(d, true, false, key, v)
+	return ""
+}
+func (d baseDict) SetDefaultRaw(key, v interface{}) string {
+	baseDictHelper.Set(d, false, false, key, v)
+	return ""
 }
 
 // Generic helpers to simplify physical implementation

@@ -50,7 +50,11 @@ func (l jsonList) GetHelpers() (collections.IDictionaryHelper, collections.IList
 }
 
 func (l jsonList) Append(values ...interface{}) jsonIList {
-	return jsonListHelper.Add(l, false, values...)
+	return jsonListHelper.Add(l, false, false, values...)
+}
+
+func (l jsonList) AppendRaw(values ...interface{}) jsonIList {
+	return jsonListHelper.Add(l, true, false, values...)
 }
 
 func (l jsonList) Contains(values ...interface{}) bool {
@@ -77,7 +81,11 @@ func (l jsonList) Pop(indexes ...int) (interface{}, jsonIList) {
 }
 
 func (l jsonList) Prepend(values ...interface{}) jsonIList {
-	return jsonListHelper.Add(l, true, values...)
+	return jsonListHelper.Add(l, false, true, values...)
+}
+
+func (l jsonList) PrependRaw(values ...interface{}) jsonIList {
+	return jsonListHelper.Add(l, true, true, values...)
 }
 
 func (l jsonList) Remove(indexes ...int) jsonIList {
@@ -89,7 +97,7 @@ func (l jsonList) Set(i int, v interface{}) (jsonIList, error) {
 }
 
 func (l jsonList) Union(values ...interface{}) jsonIList {
-	return jsonListHelper.Add(l, false, values...).Unique()
+	return jsonListHelper.Add(l, false, false, values...).Unique()
 }
 
 func (l jsonList) Without(values ...interface{}) jsonIList {
@@ -101,7 +109,12 @@ type Dictionary = jsonDict
 type jsonIDict = collections.IDictionary
 type jsonDict map[string]interface{}
 
-func (d jsonDict) Add(key, v interface{}) jsonIDict    { return jsonDictHelper.Add(d, key, v) }
+func (d jsonDict) Add(key, v interface{}) jsonIDict {
+	return jsonDictHelper.Add(d, false, key, v)
+}
+func (d jsonDict) AddRaw(key, v interface{}) jsonIDict {
+	return jsonDictHelper.Add(d, true, key, v)
+}
 func (d jsonDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
 func (d jsonDict) Clone(keys ...interface{}) jsonIDict { return jsonDictHelper.Clone(d, keys) }
 func (d jsonDict) Count() int                          { return len(d) }
@@ -118,10 +131,12 @@ func (d jsonDict) KeysAsString() strArray              { return jsonDictHelper.K
 func (d jsonDict) Len() int                            { return len(d) }
 func (d jsonDict) Native() interface{}                 { return must(collections.MarshalGo(d)) }
 func (d jsonDict) Pop(keys ...interface{}) interface{} { return jsonDictHelper.Pop(d, keys) }
-func (d jsonDict) Set(key, v interface{}) jsonIDict    { return jsonDictHelper.Set(d, key, v) }
-func (d jsonDict) Transpose() jsonIDict                { return jsonDictHelper.Transpose(d) }
-func (d jsonDict) Type() str                           { return jsonDictHelper.Type(d) }
-func (d jsonDict) TypeName() str                       { return str(jsonLower) }
+func (d jsonDict) Set(key, v interface{}) jsonIDict {
+	return jsonDictHelper.Set(d, true, true, key, v)
+}
+func (d jsonDict) Transpose() jsonIDict { return jsonDictHelper.Transpose(d) }
+func (d jsonDict) Type() str            { return jsonDictHelper.Type(d) }
+func (d jsonDict) TypeName() str        { return str(jsonLower) }
 
 func (d jsonDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
 	return jsonDictHelper, jsonListHelper
@@ -141,6 +156,20 @@ func (d jsonDict) Merge(dict jsonIDict, otherDicts ...jsonIDict) jsonIDict {
 
 func (d jsonDict) Omit(key interface{}, otherKeys ...interface{}) jsonIDict {
 	return jsonDictHelper.Omit(d, append([]interface{}{key}, otherKeys...))
+}
+
+func (d jsonDict) SetRaw(key, v interface{}) string {
+	jsonDictHelper.Set(d, false, true, key, v)
+	return ""
+}
+
+func (d jsonDict) SetDefault(key, v interface{}) string {
+	jsonDictHelper.Set(d, true, false, key, v)
+	return ""
+}
+func (d jsonDict) SetDefaultRaw(key, v interface{}) string {
+	jsonDictHelper.Set(d, false, false, key, v)
+	return ""
 }
 
 // Generic helpers to simplify physical implementation

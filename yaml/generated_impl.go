@@ -50,7 +50,11 @@ func (l yamlList) GetHelpers() (collections.IDictionaryHelper, collections.IList
 }
 
 func (l yamlList) Append(values ...interface{}) yamlIList {
-	return yamlListHelper.Add(l, false, values...)
+	return yamlListHelper.Add(l, false, false, values...)
+}
+
+func (l yamlList) AppendRaw(values ...interface{}) yamlIList {
+	return yamlListHelper.Add(l, true, false, values...)
 }
 
 func (l yamlList) Contains(values ...interface{}) bool {
@@ -77,7 +81,11 @@ func (l yamlList) Pop(indexes ...int) (interface{}, yamlIList) {
 }
 
 func (l yamlList) Prepend(values ...interface{}) yamlIList {
-	return yamlListHelper.Add(l, true, values...)
+	return yamlListHelper.Add(l, false, true, values...)
+}
+
+func (l yamlList) PrependRaw(values ...interface{}) yamlIList {
+	return yamlListHelper.Add(l, true, true, values...)
 }
 
 func (l yamlList) Remove(indexes ...int) yamlIList {
@@ -89,7 +97,7 @@ func (l yamlList) Set(i int, v interface{}) (yamlIList, error) {
 }
 
 func (l yamlList) Union(values ...interface{}) yamlIList {
-	return yamlListHelper.Add(l, false, values...).Unique()
+	return yamlListHelper.Add(l, false, false, values...).Unique()
 }
 
 func (l yamlList) Without(values ...interface{}) yamlIList {
@@ -101,7 +109,12 @@ type Dictionary = yamlDict
 type yamlIDict = collections.IDictionary
 type yamlDict map[string]interface{}
 
-func (d yamlDict) Add(key, v interface{}) yamlIDict    { return yamlDictHelper.Add(d, key, v) }
+func (d yamlDict) Add(key, v interface{}) yamlIDict {
+	return yamlDictHelper.Add(d, false, key, v)
+}
+func (d yamlDict) AddRaw(key, v interface{}) yamlIDict {
+	return yamlDictHelper.Add(d, true, key, v)
+}
 func (d yamlDict) AsMap() map[string]interface{}       { return (map[string]interface{})(d) }
 func (d yamlDict) Clone(keys ...interface{}) yamlIDict { return yamlDictHelper.Clone(d, keys) }
 func (d yamlDict) Count() int                          { return len(d) }
@@ -118,10 +131,12 @@ func (d yamlDict) KeysAsString() strArray              { return yamlDictHelper.K
 func (d yamlDict) Len() int                            { return len(d) }
 func (d yamlDict) Native() interface{}                 { return must(collections.MarshalGo(d)) }
 func (d yamlDict) Pop(keys ...interface{}) interface{} { return yamlDictHelper.Pop(d, keys) }
-func (d yamlDict) Set(key, v interface{}) yamlIDict    { return yamlDictHelper.Set(d, key, v) }
-func (d yamlDict) Transpose() yamlIDict                { return yamlDictHelper.Transpose(d) }
-func (d yamlDict) Type() str                           { return yamlDictHelper.Type(d) }
-func (d yamlDict) TypeName() str                       { return str(yamlLower) }
+func (d yamlDict) Set(key, v interface{}) yamlIDict {
+	return yamlDictHelper.Set(d, true, true, key, v)
+}
+func (d yamlDict) Transpose() yamlIDict { return yamlDictHelper.Transpose(d) }
+func (d yamlDict) Type() str            { return yamlDictHelper.Type(d) }
+func (d yamlDict) TypeName() str        { return str(yamlLower) }
 
 func (d yamlDict) GetHelpers() (collections.IDictionaryHelper, collections.IListHelper) {
 	return yamlDictHelper, yamlListHelper
@@ -141,6 +156,20 @@ func (d yamlDict) Merge(dict yamlIDict, otherDicts ...yamlIDict) yamlIDict {
 
 func (d yamlDict) Omit(key interface{}, otherKeys ...interface{}) yamlIDict {
 	return yamlDictHelper.Omit(d, append([]interface{}{key}, otherKeys...))
+}
+
+func (d yamlDict) SetRaw(key, v interface{}) string {
+	yamlDictHelper.Set(d, false, true, key, v)
+	return ""
+}
+
+func (d yamlDict) SetDefault(key, v interface{}) string {
+	yamlDictHelper.Set(d, true, false, key, v)
+	return ""
+}
+func (d yamlDict) SetDefaultRaw(key, v interface{}) string {
+	yamlDictHelper.Set(d, false, false, key, v)
+	return ""
 }
 
 // Generic helpers to simplify physical implementation
