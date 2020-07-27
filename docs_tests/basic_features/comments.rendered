@@ -61,11 +61,11 @@ Like most of the gotemplate razor syntax, you can add the minus sign to your `@`
     "Str": "string",
     "Int": 123,
     "Float": 1.23,
-    "PiAsString": "3.141592653589793",
+    "PiAsString": "<no value>",
     "ComputedAsString": "122",
 
     /* You can use the special << syntax to extract the value from the string delimiter */
-    "Pi": 3.141592653589793,
+    "Pi": <no value>,
     "Computed": 122,
 }
 ```
@@ -92,11 +92,11 @@ will give :
 Str              = "string"
 Int              = 123
 Float            = 1.23
-PiAsString       = "3.141592653589793"
+PiAsString       = "<no value>"
 ComputedAsString = "122"
 
 // You can use the special << syntax to extract the value from the string delimiter
-Pi       = 3.141592653589793
+Pi       = <no value>
 Computed = 122
 ```
 

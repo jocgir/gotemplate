@@ -529,7 +529,7 @@ func TestData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			template := New("Test").Option(StrictErrorCheck)
+			template := New("Test").Option(DefaultOptions, StrictErrorCheck)
 			got, err := template.ProcessContent(tt.code, "")
 			assert.Equal(t, tt.want, got)
 			if tt.err == nil {
@@ -560,6 +560,73 @@ func TestReservedKeywords(t *testing.T) {
 				assert.Equal(t, `{{- set $ "var" (add $ 0) }}`, string(got), code)
 			default:
 				assert.Equal(t, fmt.Sprintf(`{{- set $ "var" (add $.%s %d) }}`, keyword, i), string(got), code)
+			}
+		})
+	}
+}
+
+func TestFunctionsAsMethods(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		code string
+		want interface{}
+	}{
+		// {`{{.data}}`, "value"},
+		// {`{{upper .data}}`, "VALUE"},
+		// {`{{.data | upper}}`, "VALUE"},
+		// {`{{.data.upper}}`, "VALUE"},
+		// {`{{.data.Upper}}`, "VALUE"},
+		// {`{{("test title").Title}}`, "Test Title"},
+		// {`@data`, "value"},
+		// {`@upper(data)`, "VALUE"},
+		// {`@("TEST TITLE".Lower.Title)`, "Test Title"},
+		// {"@(`TEST TITLE`.Lower.Title)", "Test Title"},
+		// {`@("TEST".Lower.Title)`, "Test"},
+		// {"@(12.Add(3))", "15"},
+		// {"@(1.2.Add(3.4))", "4.6"},
+		{`@($.Add("hello"))`, "4.6"},
+		// {`@(.Add("hello"))`, "4.6"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.code, func(t *testing.T) {
+			template := New("Test").
+				Option(DefaultOptions, StrictErrorCheck).
+				SetContext(map[string]interface{}{"data": "value"})
+			got, err := template.ProcessContent(tt.code, "")
+			switch expected := tt.want.(type) {
+			case string:
+				assert.NoError(t, err)
+				assert.Equal(t, expected, got)
+			case error:
+				assert.EqualError(t, err, expected.Error())
+			}
+		})
+	}
+}
+
+func TestFlow(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		code string
+		want interface{}
+	}{
+		{"Hello @-return() World!", "Hello"},
+		{"Hello @-return World!", "Hello"},
+		{`Hello @return(0) World!`, "0"},
+		{`Hello @return(2+3) World!`, "5"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.code, func(t *testing.T) {
+			template := New("Test").
+				Option(DefaultOptions, StrictErrorCheck).
+				SetContext(map[string]interface{}{"data": "value"})
+			got, err := template.ProcessContent(tt.code, "")
+			switch expected := tt.want.(type) {
+			case string:
+				assert.NoError(t, err)
+				assert.Equal(t, expected, got)
+			case error:
+				assert.EqualError(t, err, expected.Error())
 			}
 		})
 	}

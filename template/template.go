@@ -43,12 +43,11 @@ func New(name string) *Template {
 		baseSubstitutesRegex = append(baseSubstitutesRegex, strings.Split(substitutesFromEnv, "\n")...)
 	}
 	t := &Template{
-		Template:       template.New(name),
-		options:        new(ExtendedOption),
-		optionsEnabled: new(ExtendedOption),
-		substitutes:    utils.InitReplacers(baseSubstitutesRegex...),
+		Template:    template.New(name),
+		options:     new(ExtendedOption),
+		substitutes: utils.InitReplacers(baseSubstitutesRegex...),
 	}
-	return t.Delims().SetContext(new(map[string]interface{}))
+	return t.Delims().SetContext(collections.CreateDictionary())
 }
 
 var templateMutex sync.Mutex
@@ -68,6 +67,34 @@ type Template struct {
 	functions      funcTableMap
 	options        *ExtendedOption
 	optionsEnabled *ExtendedOption
+}
+
+// Initialize a new template with same attributes as the current context.
+func (t *Template) init() {
+	if t.optionsEnabled != nil {
+		// The template has already been initialized
+		return
+	}
+	t.children = make(map[string]*Template)
+	t.optionsEnabled = new(ExtendedOption)
+	if *t.options == 0 {
+		t.Option(DefaultOptions)
+	}
+	if t.Template.Options() == 0 {
+		t.Option(AllNativeOptions)
+	}
+	if t.folder == "" {
+		t.folder = utils.Pwd()
+	}
+	t.folder = must(filepath.Abs(t.folder)).(string)
+	if t.Enabled(Extension) {
+		t.initExtension()
+	}
+	t.addFuncs()
+	t.setConstant(false, "\n", "NL", "CR", "NEWLINE")
+	t.setConstant(false, true, "true")
+	t.setConstant(false, false, "false")
+	t.setConstant(false, nil, "null")
 }
 
 // RazorDelim returns the razor delimiter.
@@ -117,12 +144,20 @@ func (t *Template) Option(options ...interface{}) *Template {
 	for _, opt := range options {
 		switch opt := opt.(type) {
 		case ExtendedOption:
-			t.options.Set(opt, true)
+			t.options.Set(opt)
 		default:
 			t.Template.Option(opt)
 		}
 	}
 	return t
+}
+
+// Options returns the option values that are enabled.
+func (t *Template) Options() []interface{} {
+	t.init()
+	return collections.AsList(t.options.Values()).
+		Append(t.Template.Options(), t.MissingMode()).
+		AsArray()
 }
 
 // Replacers add a series of regular expressions to apply on template before and after evaluations.
@@ -162,81 +197,22 @@ func (t *Template) ParseFiles(filenames ...string) (*Template, error) {
 	return t, err
 }
 
-// NewTemplate creates an Template object with default initialization.
-// func NewTemplate(folder string, context interface{}, delimiters string, options ExtendedOption, substitutes ...string) (result *Template, err error) {
-// 	defer func() {
-// 		if rec := recover(); rec != nil {
-// 			result, err = nil, fmt.Errorf("%v", rec)
-// 		}
-// 	}()
-// 	if options == 0 {
-// 		options = DefaultOptions
-// 	}
-
-// 	t := Must(New("Main").Parse(""))
-// 	if acceptNoValue {
-// 		t.Option(AcceptNoValue)
-// 	}
-// 	if strictError {
-// 		t.Option(StrictErrorCheck)
-// 	}
-// 	t.folder, _ = filepath.Abs(iif(folder != "", folder, utils.Pwd()).(string))
-// 	t.context = iif(context != nil, context, collections.CreateDictionary())
-// 	t.aliases = make(funcTableMap)
-
-// 	// Set the regular expression replacements
-// 	baseSubstitutesRegex := []string{`/(?m)^\s*#!\s*$/`}
-// 	if substitutesFromEnv := os.Getenv(EnvSubstitutes); substitutesFromEnv != "" {
-// 		baseSubstitutesRegex = append(baseSubstitutesRegex, strings.Split(substitutesFromEnv, "\n")...)
-// 	}
-// 	t.substitutes = utils.InitReplacers(append(baseSubstitutesRegex, substitutes...)...)
-
-// 	if t.Enabled(Extension) {
-// 		t.initExtension()
-// 	}
-
-// 	// Set the options supplied by caller
-// 	t.init("")
-// 	if delimiters != "" {
-// 		t.Delims(strings.Split(delimiters, ",")...)
-// 	}
-// 	return t, nil
-// }
-
-func (t *Template) init2() {
-}
-
-// Initialize a new template with same attributes as the current context.
-func (t *Template) init(folder string) {
-	if folder != "" {
-		t.folder, _ = filepath.Abs(folder)
-	}
-	if *t.options == 0 {
-		t.Option(DefaultOptions)
-	}
-	if t.Options() == 0 {
-		t.Option(AllOptions)
-	}
-	t.addFuncs()
-	t.children = make(map[string]*Template)
-	t.setConstant(false, "\n", "NL", "CR", "NEWLINE")
-	t.setConstant(false, true, "true")
-	t.setConstant(false, false, "false")
-	t.setConstant(false, nil, "null")
-}
-
 // GetNewContext returns a distinct context for each folder.
 func (t *Template) GetNewContext(folder string, useCache bool) *Template {
+	t.init()
 	folder = iif(folder != "", folder, t.folder).(string)
 	if context, found := t.children[folder]; useCache && found {
 		return context
 	}
 
 	newTemplate := *t
-	newTemplate.Template = template.New(folder)
+	if folder != "" {
+		newTemplate.folder, _ = filepath.Abs(folder)
+	}
+	newTemplate.Template = template.New(folder).Option(t.Template.Options())
 	newTemplate.addFunctions(t.functions)
 	newTemplate.addFunctions(t.aliases)
-	newTemplate.init(folder)
+	newTemplate.addFuncs()
 	newTemplate.parent = t
 	newTemplate.importTemplates(t)
 	newTemplate.options = new(ExtendedOption)

@@ -49,6 +49,7 @@
         "acarl",
         "bcrypt",
         "colorln",
+        "bitenum",
         "htpasswd",
         "markdownlint"
     ]

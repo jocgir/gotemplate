@@ -70,6 +70,7 @@ github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jocgir/template v1.14.2 h1:Kv+ct6xUhLTcjW9E7Nc44WdiNkwtJESGl4be46i19sk=
 github.com/jocgir/template v1.14.2/go.mod h1:lCuOoEd1EkBYnO37rCg2sntnEOrelI50xHIKfbHbgzw=
+github.com/jocgir/tools v0.0.0-20200428211428-0c9eba77bc32 h1:75d2OrYzolx6NDbmcskDglDjb5uR3pjVlgKSJkW5f3w=
 github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7C0MuV77Wo=
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/kevinburke/ssh_config v0.0.0-20190725054713-01f96b0aa0cd h1:Coekwdh0v2wtGp9Gmz1Ze3eVRAWJMLokvN3QjdzCHLY=

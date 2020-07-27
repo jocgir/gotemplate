@@ -60,6 +60,10 @@ func nodeValue(node ast.Node) (result string, err error) {
 		if sel, err = nodeValueInternal(n.Sel); err != nil {
 			return
 		}
+		var last = rune(x[len(x)-1])
+		if unicode.IsDigit(last) || strings.ContainsAny(string(last), "\"`") {
+			x = "(" + x + ")"
+		}
 		result = fmt.Sprintf("%s.%s", x, strings.TrimPrefix(sel, globalRep))
 	case *ast.ParenExpr:
 		var content string

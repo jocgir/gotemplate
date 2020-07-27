@@ -38,6 +38,7 @@ func init() {
 
 var dotPrefix = regexp.MustCompile(`(?P<prefix>^|[^\w\)\]])\.(?P<value>\w[\w\.]*)?`)
 var idRegex = regexp.MustCompile(`^[\p{L}\d_]+$`)
+var literalDot = regexp.MustCompile(`(?P<literal>(?:".*"|\x60.*\x60|\d+|\d+\.\d+))\.(?P<method>[_a-zA-Z]\w+)`)
 
 func expressionParser(repl replacement, match string) string {
 	expr, _ := expressionParserInternal(repl, match, false, false)
@@ -71,6 +72,7 @@ func expressionParserInternal(repl replacement, match string, skipError, interna
 		for k, v := range reserved {
 			protected = protected.Replace(k, v)
 		}
+		protected = String(literalDot.ReplaceAllString(protected.Str(), "($literal).$method"))
 		protected = String(dotPrefix.ReplaceAllString(protected.Str(), fmt.Sprintf("${prefix}%s${value}", dotRep)))
 		for k, v := range map[string]string{
 			"<>": "!=", "≠": "!=",

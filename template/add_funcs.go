@@ -36,7 +36,7 @@ func (t *Template) addFuncs() {
 		if t.Enabled(o) {
 			f()
 		}
-		t.optionsEnabled.Set(o, true)
+		t.optionsEnabled.Set(o)
 	}
 
 	add(Sprig, t.addSprigFuncs)

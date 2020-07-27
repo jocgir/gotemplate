@@ -116,7 +116,7 @@ func runGotemplate() (exitCode int) {
 	// Set the options for the available options (most of them are on by default)
 	optionsOff := app.Flag("base", "Turn off all addons (they could then be enabled explicitly)").NoAutoShortcut().Bool()
 	var (
-		defaultOptionList = template.DefaultOptions.List()
+		defaultOptionList = template.DefaultOptions.Values()
 		optionFlags       = make([]bool, len(defaultOptionList))
 	)
 	for i, opt := range defaultOptionList {
@@ -167,13 +167,13 @@ func runGotemplate() (exitCode int) {
 		collections.SetDictionaryHelper(json.DictionaryHelper)
 	}
 
-	options.Set(template.RenderingDisabled, *disableRender)
-	options.Set(template.Overwrite, *overwrite)
-	options.Set(template.OutputStdout, *print)
-	options.Set(template.AcceptNoValue, *acceptNoValue)
-	options.Set(template.StrictErrorCheck, *strictError)
+	options.Turn(template.RenderingDisabled, *disableRender)
+	options.Turn(template.Overwrite, *overwrite)
+	options.Turn(template.OutputStdout, *print)
+	options.Turn(template.AcceptNoValue, *acceptNoValue)
+	options.Turn(template.StrictErrorCheck, *strictError)
 	for i, opt := range defaultOptionList {
-		options.Set(opt, optionFlags[i])
+		options.Turn(opt, optionFlags[i])
 	}
 
 	switch *strictAssignations {
@@ -259,12 +259,8 @@ func runGotemplate() (exitCode int) {
 		SetContext(context).
 		Delims(strings.Split(*delimiters, ",")...).
 		Option(options).
-		Replacers(*substitutes...)
-	if err != nil {
-		errors.Print(err)
-		return 3
-	}
-	t.TempFolder(tempFolder)
+		Replacers(*substitutes...).
+		TempFolder(tempFolder)
 
 	if command == list.FullCommand() {
 		if !(*listFunctions || *listTemplates) {

@@ -28,7 +28,7 @@ func (t *Template) ProcessTemplatesWithHandler(sourceFolder, targetFolder string
 
 	var errors errors.Array
 	for i := range templates {
-		t.options.Set(OutputStdout, print) // Some file may change this option at runtime, so we restore it back to its originalSourceLines value between each file
+		t.options.Turn(OutputStdout, print) // Some file may change this option at runtime, so we restore it back to its originalSourceLines value between each file
 		resultFile, err := t.processTemplate(templates[i], sourceFolder, targetFolder, handler)
 		if err == nil {
 			if resultFile != "" {
@@ -126,6 +126,7 @@ func (t *Template) processTemplate(template, sourceFolder, targetFolder string, 
 }
 
 func (t *Template) processContentInternal(originalContent, source string, originalSourceLines []string, retryCount int, cloneContext bool, handler CustomHandler) (result string, changed bool, err error) {
+	t.init()
 	th := errorHandler{
 		Template: t,
 		Filename: source,

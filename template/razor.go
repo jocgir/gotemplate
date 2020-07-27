@@ -11,6 +11,7 @@ import (
 
 // Add additional functions to the go template context
 func (t *Template) applyRazor(content []byte) (result []byte, changed bool) {
+	t.init()
 	if t.Disabled(Razor) || !t.IsRazor(string(content)) {
 		return content, false
 	}
@@ -84,9 +85,10 @@ var expressions = [][]interface{}{
 	// Commands
 	{"Foreach", `@reduce;for(?:[sp]each)?[sp]\(`, "@${reduce}range("},
 	{"Single line command - @command (expr) action;", `@reduce;(?P<command>if|with|range)[sp]\([sp]assign;?[sp](?P<expr>[expr]+)[sp]\)[sp](?P<action>[^\n]+?)[sp];`, `{{${reduce1} ${command} ${assign}${expr} ${reduce2}}}${action}{{${reduce1} end ${reduce2}}}`, replacementFunc(expressionParserSkipError), replacementFunc(expressionParser)},
-	{"Single line command - @command (expr) { action }", `(?m)@reduce;(?P<command>if|with|range)[sp]\([sp]assign;?[sp](?P<expr>[expr]+)[sp]\)[sp]{[sp](?P<action>[^\n]+?)}[sp]$`, `{{${reduce1} ${command} ${assign}${expr} ${reduce2}}}${action}{{${reduce1} end ${reduce2}}}`, replacementFunc(expressionParserSkipError), replacementFunc(expressionParser)},
+	{"Single line command - @command (expr) { action }", `(?m)@reduce;(?P<command>if|with|range)[sp]\([sp]assign;?[sp](?P<expr>[expr]+)[sp]\)[sp]{[sp](?P<action>[^\n]+?)[sp]}`, `{{${reduce1} ${command} ${assign}${expr} ${reduce2}}}${action}{{${reduce1} end ${reduce2}}}`, replacementFunc(expressionParserSkipError), replacementFunc(expressionParser)},
 	{"Command(expr)", `@reduce;(?P<command>if|else[sp]if|block|with|define|range)[sp]\([sp]assign;?[sp](?P<expr>[expr]+)[sp]\)[sp]`, `{{${reduce1} ${command} ${assign}${expr} ${reduce2}}}`, replacementFunc(expressionParserSkipError), replacementFunc(expressionParser)},
-	{"else", `@reduce;else`, "{{${reduce1} else ${reduce2}}}"},
+	{"Return(expr)", `@reduce;return[sp]\([sp](?P<expr>[expr]+)[sp]\)[sp]`, `{{${reduce1} return (${expr}) ${reduce2}}}`, replacementFunc(expressionParserSkipError), replacementFunc(expressionParser)},
+	{"keywords", `@reduce;(?P<keyword>else|return|continue|break)\b`, "{{${reduce1} ${keyword} ${reduce2}}}"},
 	{"various ends", `@reduce;(?P<command>end[sp](if|range|define|block|with|for[sp]each|for|))endexpr;`, "{{${reduce1} end ${reduce2}}}"},
 
 	// Assignations

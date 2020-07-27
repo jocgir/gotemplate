@@ -6,7 +6,6 @@ import (
 )
 
 func Test_average(t *testing.T) {
-
 	tests := []struct {
 		name    string
 		arg1    interface{}

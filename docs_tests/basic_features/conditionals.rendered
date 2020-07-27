@@ -1,9 +1,6 @@
 # Conditionals in gotemplate
 
 ```go
-    TestTrue
-    TestTrueAndTrue
-    TestTrueOrFalse
     FalseStringIsTrue
 ```
 
